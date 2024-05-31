@@ -4,7 +4,7 @@
 @Project    : CalculationExtract
 @File       : vasprun.py
 @IDE        : PyCharm
-@Author     : zychen@cnic.cn
+@Author     : zychen@cnic.cn & wzhou255@wisc.edu
 @Date       : 2024/5/30 16:22
 @Description:
 """
