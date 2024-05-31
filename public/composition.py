@@ -9,3 +9,8 @@
 @Description: 
 """
 class Composition:
+    def __init__(self, atomic_symbol, atomic_number, atomic_mass, amount):
+        self.atomic_symbol = atomic_symbol
+        self.atomic_number = atomic_number
+        self.atomic_mass = atomic_mass
+        self.amount = amount

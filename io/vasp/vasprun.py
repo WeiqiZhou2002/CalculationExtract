@@ -17,11 +17,16 @@ import numpy as np
 
 from public.periodic_table import PTable
 from public.lattice import Lattice
+from public.sites import Site, Atom
+from public.composition import Composition
+from public.helper import parseVarray
 
-class VaspParser():
+
+
+
+class VasprunParser():
 
     def __init__(self, vaspPath, collections):
-        super().__init__(vaspPath)
         self.vaspPath = vaspPath
         self.collections = collections
 
@@ -68,7 +73,6 @@ class VaspParser():
         self.numberOfSites = self.getNumberOfSites()
         self.startTime = self.getStartTime()
         self.software = self.getSoftware()
-        self.resourceUsage = self.getResourceUsage()
         self.kPoints = self.getKPoints()
 
     def getLatticeParameters(self, isinit: bool = False):
@@ -110,12 +114,10 @@ class VaspParser():
                 count += composition[child2[0].text.strip(' ')]
             composition.update({child2[0].text.strip(' '): count})
         for spec in composition.keys():
-            atom = {
-                "AtomicSymbol": spec,
-                "AtomicNumber": PTable().detailed[spec]["Atomic no"],
-                "AtomicMass": PTable().detailed[spec]["Atomic mass"],
-                "Amount": composition[spec]
-            }
+            atom = Composition(atomic_symbol=spec,
+                               atomic_number=PTable().detailed[spec]["Atomic no"],
+                               atomic_mass=PTable().detailed[spec]["Atomic mass"],
+                               amount=composition[spec])
             composition_full.append(atom)
         return composition_full
 
@@ -125,3 +127,99 @@ class VaspParser():
         else:
             child = self.root.find("./structure[@name='finalpos']/crystal/i[@name='volume']")
         return float(child.text)
+
+    def getSites(self, isinit: bool = False):
+        specs = []
+        sites = []
+        forces = []
+        paras = self.parameters
+        child = self.root.find("./atominfo/array[@name='atoms']/set")
+        for child2 in child:
+            specs.append(child2[0].text.strip(' '))
+        if isinit:
+            child = self.root.find("./structure[@name='initialpos']/varray")
+            forces = [None for _ in range(len(specs))]
+        else:
+            force_child = self.root.find("./calculation[last()]/varray[@name='forces']")
+            for force in force_child:
+                forces.append([float(x) for x in force.text.split()])
+
+            child = self.root.find("./structure[@name='finalpos']/varray")
+
+        for i in range(len(specs)):
+            p = child[i].text.split()
+            p = [float(x) for x in p]
+            sites.append(Site(p, Atom(specs[i]), forces[i]))
+
+        if 'MAGMOM' in paras.keys() and len(paras['MAGMOM']) == len(sites):
+            magmom = paras['MAGMOM']
+        else:
+            magmom = [0. for _ in range(len(sites))]
+
+        for i in range(len(sites)):
+            sites[i].set_magmom(magmom[i])
+
+        return sites
+
+    def getNumberOfSites(self):
+        child = self.root.find("./atominfo/atoms")
+        return int(child.text)
+
+    def getSoftware(self):
+        software = {}
+        for child in self.root:
+            if child.tag == 'generator':
+                for child2 in child:
+                    if child2.attrib == {'name': "program", 'type': "string"}:
+                        software['SoftwareName'] = child2.text.strip(' ')
+                    elif child2.attrib == {'name': "version", 'type': "string"}:
+                        software['SoftwareVersion'] = child2.text.strip(' ')
+                    elif child2.attrib == {'name': "subversion", 'type': "string"}:
+                        software['Subversion'] = child2.text.strip(' ').replace("    ", " ")
+                    elif child2.attrib == {'name': "platform", 'type': "string"}:
+                        software['Platform'] = child2.text.strip(' ')
+                return software
+
+    def getStartTime(self):
+        sdata = ''
+        stime = ''
+        for child in self.root:
+            if child.tag == 'generator':
+                for child2 in child:
+                    if child2.attrib == {'name': "date", 'type': "string"}:
+                        sdata = child2.text
+                    elif child2.attrib == {'name': "time", 'type': "string"}:
+                        stime = child2.text
+                timearray = time.strptime(sdata + stime, "%Y %m %d %H:%M:%S ")
+                timestyle = time.strftime("%Y-%m-%d %H:%M:%S", timearray)
+                return timestyle
+
+    def getReciprocalLattice(self, isinit: bool = False):
+        """
+                获取reciprocallattice
+                :param isinit:
+                :return:
+                """
+        if isinit:
+            child = self.root.find("./structure[@name='initialpos']/crystal/varray[@name='rec_basis']")
+        else:
+            child = self.root.find("./structure[@name='finalpos']/crystal/varray[@name='rec_basis']")
+        a = child[0].text.split()
+        a = [float(i) for i in a]
+        b = child[1].text.split()
+        b = [float(i) for i in b]
+        c = child[2].text.split()
+        c = [float(i) for i in c]
+        return np.array([a, b, c]).reshape((3, 3))
+
+
+    def getKPoints(self):
+        """
+        提取 点
+        :return:
+        """
+        child = self.root.find("./kpoints/varray[@name='kpointlist']")
+        data = parseVarray(child)
+        return data
+
+
