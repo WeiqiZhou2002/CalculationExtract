@@ -8,18 +8,16 @@
 @Date       : 2024/5/30 16:22
 @Description:
 """
-import linecache
 import math
-import os.path
 import time
 import xml.etree.cElementTree as ET
 import numpy as np
 
-from public.periodic_table import PTable
+from public.tools.periodic_table import PTable
 from public.lattice import Lattice
 from public.sites import Site, Atom
 from public.composition import Composition
-from public.helper import parseVarray
+from public.tools.helper import parseVarray
 
 
 

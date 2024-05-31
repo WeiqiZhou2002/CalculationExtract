@@ -6,7 +6,7 @@
 from typing import Union, Tuple, List
 import numpy as np
 
-from utils.tools.periodicTable import PTable
+from public.tools.periodic_table import PTable
 
 
 class Atom:

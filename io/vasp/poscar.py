@@ -8,15 +8,8 @@
 @Date       : 2024/5/30 16:30 
 @Description: 
 """
-import math
-import os.path
-import time
-import xml.etree.cElementTree as ET
-import numpy as np
 
-from public.periodic_table import PTable
-from public.lattice import Lattice
-from public.sites import Site
+from public.tools.periodic_table import PTable
 from public.composition import Composition
 class PoscarParser:
     def __init__(self, poscarPath, collections):
