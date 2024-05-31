@@ -8,7 +8,10 @@
 @Date       : 2024/5/30 16:38 
 @Description: 
 """
-class Composition:
+from monty.json import MSONable
+
+
+class Composition(MSONable):
     def __init__(self, atomic_symbol, atomic_number, atomic_mass, amount):
         self.atomic_symbol = atomic_symbol
         self.atomic_number = atomic_number
