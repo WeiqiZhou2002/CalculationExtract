@@ -18,11 +18,10 @@ from public.lattice import Lattice
 from public.sites import Site, Atom
 from public.composition import Composition
 from public.tools.helper import parseVarray
+from public.calculation_type import CalType
 
 
-
-
-class VasprunParser():
+class VasprunParser:
 
     def __init__(self, vaspPath, collections):
         self.vaspPath = vaspPath
@@ -32,6 +31,23 @@ class VasprunParser():
         if tree is None:
             raise ValueError('File content error, not parse!')
         self.root = tree.getroot()
+        self.lattice_s = None
+        self.lattice_e = None
+        self.latticeParameters_s = None
+        self.latticeParameters_e = None
+        self.composition = None
+        self.parameters = None
+        self.sites_s = None
+        self.sites_e = None
+        self.volume_s = None
+        self.volume_e = None
+        self.numberOfSites = None
+        self.startTime = None
+        self.software = None
+        self.ionicSteps = None
+        self.electronicSteps = None
+        self.thermoDynamicProperties = None
+        self.hasSetup = False
         self.calculationType = None
         self.simplestFormula = None
         self.generalFormula = None
@@ -59,7 +75,6 @@ class VasprunParser():
         self.elasticProperties = None
 
     def setup(self):
-        self.calculationType = self.getCalculationType()
         self.lattice_s, self.latticeParameters_s = self.getLatticeParameters(isinit=True)
         self.lattice_e, self.latticeParameters_e = self.getLatticeParameters(isinit=False)
         self.composition = self.getComposition()
@@ -72,6 +87,55 @@ class VasprunParser():
         self.startTime = self.getStartTime()
         self.software = self.getSoftware()
         self.kPoints = self.getKPoints()
+
+    def findPara(self, parameters: list):
+        """
+        获取指定的参数
+        :return:
+        """
+        parameters_dict = {}
+        xpath1 = "./incar/i"
+        xpath2 = "./incar/v"
+        xpath3 = "./parameters//i"
+        xpath4 = "./parameters//v"
+        for para in parameters:
+            flag = False
+            if para == 'ALGO':
+                parameters_dict[para] = 'Normal'
+            for xpath in [xpath1, xpath2, xpath3, xpath4]:
+                child = self.root.findall(xpath)
+                for child2 in child:
+                    if child2.attrib['name'] == para:
+                        flag = True
+                        if 'type' in child2.attrib.keys():
+                            if child2.attrib['type'] == 'int':
+                                parameters_dict[para] = int(child2.text.strip())
+                            elif child2.attrib['type'] == 'string':
+                                parameters_dict[para] = child2.text.strip(' ')
+                            elif child2.attrib['type'] == 'logical':
+                                if 'F' in child2.text:
+                                    parameters_dict[para] = False
+                                else:
+                                    parameters_dict[para] = True
+                        else:
+                            if child2.tag == 'v':
+                                parameters_dict[para] = [float(t) for t in child2.text.split()]
+                            elif child2.tag == 'i':
+                                parameters_dict[para] = float(child2.text.strip())
+                        break
+                if flag:
+                    break
+        if 'ENCUT' in parameters and 'ENCUT' not in parameters_dict.keys():
+            if parameters_dict['PREC'] == 'normal':
+                enmax = []
+                composition = self.composition
+                for doc in composition:
+                    symbol = doc['AtomicSymbol']
+                    em = PTable().enmax[symbol]
+                    enmax.append(em)
+                parameters_dict['ENCUT'] = max(enmax)
+        return parameters_dict
+
 
     def getLatticeParameters(self, isinit: bool = False):
         if isinit:
@@ -118,6 +182,76 @@ class VasprunParser():
                                amount=composition[spec])
             composition_full.append(atom)
         return composition_full
+
+    def getParameters(self):
+        calType = self.calculationType
+        kpoints = {}
+        pseudopotential = []
+        parameters_dict = {}
+        geometry_optim = ['PREC', 'ISPIN', 'ISTART', 'ICHARG', 'ENCUT', 'NELM', 'ALGO', 'EDIFF', 'EDIFFG',
+                          'ISMEAR', 'SIGMA', 'GGA', 'NBANDS', 'NEDOS', 'IBRION', 'ISIF', 'NSW', 'LORBIT',
+                          'ISYM', 'LDAU', 'LHFCALC', 'LWAVE', 'LCHARG']
+        StaticDosBand_calculation = ['PREC', 'ISPIN', 'ISTART', 'ICHARG', 'ENCUT', 'NELM', 'ALGO', 'EDIFF', 'EDIFFG',
+                                     'ISMEAR', 'SIGMA', 'GGA', 'NBANDS', 'NEDOS', 'IBRION', 'ISIF', 'LORBIT',
+                                     'ISYM', 'LDAU', 'LHFCALC', 'LWAVE', 'LCHARG', 'LELF', 'LOPTICS', 'CSHIFT',
+                                     'MAGMOM', 'LAECHG']
+        dielectric_calculation = ['PREC', 'ISPIN', 'ISTART', 'ICHARG', 'ENCUT', 'NELM', 'ALGO', 'EDIFF', 'EDIFFG',
+                                  'ISMEAR', 'SIGMA', 'GGA', 'NBANDS', 'NEDOS', 'IBRION', 'ISIF', 'LORBIT',
+                                  'ISYM', 'LWAVE', 'LCHARG', 'LOPTICS', 'CSHIFT', 'MAGMOM']
+        timepredict = ['PREC', 'ISPIN', 'IBRION', 'EDIFF', 'EDIFFG', 'ISIF', 'NSW', 'ALGO', 'ENCUT', 'NELECT',
+                       'LOPTICS', 'LHFCALC']
+        if calType == CalType.GeometryOptimization:
+            parameters_dict = self.findPara(geometry_optim)
+        elif calType == CalType.StaticCalculation or CalType.DensityOfStates or CalType.BandStructure or CalType.ElasticProperties or CalType.MagneticProperties:
+            parameters_dict = self.findPara(StaticDosBand_calculation)
+            if parameters_dict['LDAU']:
+                parameters_dict['LDAUTYPE'] = self.findPara(['LDAUTYPE'])['LDAUTYPE']
+                parameters_dict['LDAUL'] = self.findPara(['LDAUL'])['LDAUL']
+                parameters_dict['LDAUU'] = self.findPara(['LDAUU'])['LDAUU']
+                parameters_dict['LDAUJ'] = self.findPara(['LDAUJ'])['LDAUJ']
+                parameters_dict['LDAUPRINT'] = self.findPara(['LDAUPRINT'])['LDAUPRINT']
+            if parameters_dict['LHFCALC']:
+                parameters_dict['AEXX'] = self.findPara(['AEXX'])['AEXX']
+                parameters_dict['HFSCREEN'] = self.findPara(['HFSCREEN'])['HFSCREEN']
+                parameters_dict['LMAXFOCK'] = self.findPara(['LMAXFOCK'])['LMAXFOCK']
+        elif calType == CalType.DielectricProperties:
+            parameters_dict = self.findPara(dielectric_calculation)
+        else:
+            parameters_dict = self.findPara(timepredict)
+        child = self.root.find("./kpoints/generation")
+        # Kpoint信息： band 提取与其他不同，分情况
+        if calType == CalType.BandStructure:
+            if child.attrib['param'] == 'listgenerated':
+                for child2 in child:
+                    if child2.attrib == {'type': 'int', 'name': 'divisions'}:
+                        kpoints['KgridDivision'] = child2.text.strip()
+                HighsymPoints = []
+                for v in child.findall('v'):
+                    HighsymPoints.append([float(i) for i in v.text.split()])
+                kpoints['HighsymPoints'] = HighsymPoints
+            parameters_dict['KpointsPath'] = kpoints
+        else:
+            if child.attrib['param'] == 'Gamma':
+                kpoints['GammaCentered'] = True
+            else:
+                kpoints['GammaCentered'] = False
+            for child2 in child:
+                if child2.attrib == {'type': 'int', 'name': 'divisions'}:
+                    kpoints['KgridDivision'] = [int(i) for i in child2.text.split()]
+                if child2.attrib == {'name': 'shift'}:
+                    kpoints['Meshshift'] = [float(i) for i in child2.text.split()]
+            child = self.root.find("./kpoints/varray[@name='kpointlist']")
+            count = 0
+            for _ in child:
+                count += 1
+            kpoints['totalnums'] = count
+            parameters_dict['Kpoints'] = kpoints
+        # 赝势信息
+        child = self.root.find("./atominfo/array[@name='atomtypes']/set")
+        for child2 in child:
+            pseudopotential.append(child2[4].text.strip(' '))
+        parameters_dict['PseudoPotential'] = pseudopotential
+        return parameters_dict
 
     def getVolume(self, isinit: bool = False):
         if isinit:
