@@ -19,6 +19,7 @@ class BaseCalculation(ABC):
     def __init__(self, file_parsers: dict):
         self.structure = None
         self.file_parser = file_parsers
+        self.parm = None
         if file_parsers['vasprun'] is not None:
             self.vasprunParser = file_parsers['vasprun']
             self.input_structure = self.vasprunParser.input_structure
@@ -35,6 +36,7 @@ class BaseCalculation(ABC):
                 'Files': [],
                 'CalculationType': self.vasprunParser.calculationType
             }
+            self.parm=self.vasprunParser.parameters
         elif file_parsers['poscar'] is not None and file_parsers['incar'] is not None:
             poscarParser = file_parsers['poscar']
             self.output_structure = poscarParser.structure
@@ -48,6 +50,9 @@ class BaseCalculation(ABC):
             }
         else:
             raise ValueError("不可同时无vasprun或poscar和incar")
+        self.parm = file_parsers['incar'].fill_parameters(self.parm)
+        self.outcarParser = file_parsers['outcar']
+        self.oszicarParser = file_parsers['oszicar']
 
     def getEigenValues(self):
         """
@@ -95,6 +100,52 @@ class BaseCalculation(ABC):
             "EigenvalData": EigenvalData,
             "EigenvalOcc": EigenvalOcc
         }
+
+    def getElectronicSteps(self):
+        electronicSteps = []
+        for child in self.vasprunParser.root:
+            if child.tag == 'calculation':
+                energys = []
+                cputimes = []
+                totalenergydiffs = []
+                for child2 in child:
+                    if child2.tag == 'scstep':
+                        for child3 in child2:
+                            if child3.attrib == {'name': 'total'}:
+                                times = child3.text.split()
+                                if len(times) == 1:
+                                    times = times[0]
+                                    times = [times[: times.find('.') + 3], times[times.find('.') + 3:]]
+                                if '*' in times[1]:
+                                    cputime = 'NAN'
+                                else:
+                                    cputime = float(times[1])
+                                cputimes.append(cputime)
+                            if child3.tag == 'energy':
+                                for child4 in child3:
+                                    if child4.attrib == {'name': 'e_fr_energy'}:
+                                        energy = float(child4.text)
+                                        energys.append(energy)
+
+                energy_pre = 0.0
+                for energy in energys:
+                    totalenergydiffs.append(energy - energy_pre)
+                    energy_pre = energy
+
+                para = self.parm['EDIFF']
+                if para >= totalenergydiffs[-1]:
+                    eleconvergency = True
+                else:
+                    eleconvergency = False
+                doc = {
+                    'TotalEnergy': energys,
+                    'EleStepCpuTime': cputimes,
+                    'TotalEnergyDiff': totalenergydiffs,
+                    'EleConvergency': eleconvergency
+                }
+                electronicSteps.append(doc)
+        return electronicSteps
+
 
     @abstractmethod
     def to_bson(self):
