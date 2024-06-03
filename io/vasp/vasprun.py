@@ -22,10 +22,14 @@ from public.composition import Composition
 from public.tools.helper import parseVarray
 from public.calculation_type import CalType
 from entries.calculations import CalculateEntries
+from public.structure import Structure
+
 
 class Vasprun:
 
     def __init__(self, vaspPath):
+        self.output_structure = None
+        self.input_structure = None
         self.vaspPath = vaspPath
         tree = ET.parse(vaspPath)
         if tree is None:
@@ -91,6 +95,11 @@ class Vasprun:
         self.software = self.getSoftware()
         self.kPoints = self.getKPoints()
         self.kPointPath = self.findKpointPath()
+        self.input_structure = Structure(lattice=self.lattice_init, composition=self.composition, sites=self.sites_init)
+        self.input_structure.setup()
+        self.output_structure = Structure(lattice=self.lattice_final, composition=self.composition,
+                                          sites=self.sites_final)
+        self.output_structure.setup()
 
     def findPara(self, parameters: list):
         """
@@ -140,7 +149,6 @@ class Vasprun:
                 parameters_dict['ENCUT'] = max(enmax)
         return parameters_dict
 
-
     def getCalType(self):
         para_list = ['IBRION', 'LORBIT', 'LOPTICS', 'LEPSILON', 'LCALCEPS', 'ISIF', 'MAGMOM']
         parameters = self.findPara(para_list)
@@ -178,7 +186,7 @@ class Vasprun:
         else:
             child = self.root.find("./structure[@name='finalpos']/crystal/varray[@name='basis']")
         matrix = [
-            list(map(float,child[0].text.split())),
+            list(map(float, child[0].text.split())),
             list(map(float, child[1].text.split())),
             list(map(float, child[2].text.split()))
         ]
@@ -363,7 +371,6 @@ class Vasprun:
         c = [float(i) for i in c]
         return np.array([a, b, c]).reshape((3, 3))
 
-
     def getKPoints(self):
         """
         提取 点
@@ -372,5 +379,3 @@ class Vasprun:
         child = self.root.find("./kpoints/varray[@name='kpointlist']")
         data = parseVarray(child)
         return data
-
-

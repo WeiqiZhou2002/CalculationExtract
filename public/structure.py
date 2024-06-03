@@ -16,6 +16,8 @@ import spglib as spg
 from math import sqrt, pi
 from pymatgen.core.structure import Structure as PyStr
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer as sga
+from pymatgen.symmetry.groups import SpaceGroup
+from pymatgen.core.lattice import Lattice as PyLattice
 
 from public.lattice import Lattice
 from public.composition import Composition
@@ -24,7 +26,7 @@ from public.tools.pointGroupInfo import pointgroup_symbol_num
 from public.tools.highSymmetryKPath import *
 
 
-class Structure:
+class Structure():
 
     def __init__(self,
                  lattice: Lattice = None,
@@ -54,10 +56,30 @@ class Structure:
         self.sitesDoc = None
         self.hashId = None
 
-
-    @abstractmethod
     def setup(self):
-        pass
+        if self.lattice is None or self.sites is None or self.composition is None:
+            raise ValueError('Lattice Sites Composition 都不能为空！')
+        self.formula = self.getFormula()
+        self.simplestFormula = self.getSimplestFormula()
+        self.numberOfElements = self.getNElements()
+        self.numberOfSites = self.getNSites()
+        self.stoichiometry = self.getStoichiometry()
+        self.spaceGroup, self.pointGroup = self.getSpacePointGroup()
+        self.volume = self.getVolume()
+        self.latticeParameters = self.getLatticeParameters()
+        self.crystalSystem = self.getCrystalSystem()
+        self.bravaisLattice = self.getBravaisLattice()
+        self.reciprocalLattice = self.getReciprocalLattice()
+        self.primitiveLattice = self.getPrimitiveLattice()
+        self.conventionalLattice = self.getConventionalLattice()
+        self.highSymmetryKPath = self.getHighSymmetryKPath()
+        self.sitesDoc = self.getSitesList()
+        self.hashId = self.getHashValue()
+        # 判断空间群是否匹配
+        spg = SpaceGroup(self.spaceGroup['spacegroupSymbol'])
+        lattice = PyLattice(self.conventionalLattice)
+        if not spg.is_compatible(lattice, tol=0.01):
+            raise ValueError('space group not compatible with lattice')
 
     def getSpacePointGroup(self):
         """
@@ -435,5 +457,33 @@ class Structure:
         }
         hash_value = md5(json.dumps(hash_create_doc).encode('utf8')).hexdigest()
         return hash_value
+
+    def to_bson(self):
+        doc = {
+            "Formula": self.formula,
+            "SimplestFormula": self.simplestFormula,
+            "GeneralFormula": self.generalFormula,  # 新增
+            "NumberOfElements": self.numberOfElements,
+            "NumberOfSites": self.numberOfSites,
+            "Composition": self.composition,
+            "Stoichiometry": self.stoichiometry,
+            "LatticeParameters": self.latticeParameters,
+            "Lattice": self.lattice.matrix.tolist(),
+            "Volume": self.volume,
+            "SpaceGroup": self.spaceGroup,
+            "PointGroup": self.pointGroup,
+            "CrystalSystem": self.crystalSystem,
+            "BravaisLattice": self.bravaisLattice,
+            "ReciprocalLattice": self.reciprocalLattice.tolist(),
+            "PrimitiveLattice": self.primitiveLattice.tolist(),
+            "ConventionalLattice": self.conventionalLattice.tolist(),
+            "HighSymmetryKpath": self.highSymmetryKPath,
+            "Sites": self.sitesDoc,  # 有变化
+            "Prototype": self.prototype,  # 新增
+            "CellStress": self.cellStress,  # 新增
+            "HashValue": self.hashId
+        }
+        return doc
+
 
 

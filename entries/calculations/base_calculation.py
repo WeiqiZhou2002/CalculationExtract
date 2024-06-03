@@ -13,15 +13,12 @@ from public.structure import Structure
 
 class BaseCalculation(ABC):
     def __init__(self, file_parsers: dict):
+        self.structure = None
         self.file_parser = file_parsers
         if file_parsers['vasprun'] is not None:
-            self.lattice_init = file_parsers['vasprun'].lattice_init
-            self.lattice_final = file_parsers['vasprun'].lattice_final
-            self.composition = file_parsers['vasprun'].composition
-            self.sites_init = file_parsers['vasprun'].sites_init
-            self.sites_final = file_parsers['vasprun'].sites_final
-
-
+            self.input_structure = file_parsers['vasprun'].input_structure
+            self.output_structure = file_parsers['vasprun'].output_structure
+        
     @abstractmethod
     def to_bson(self):
         pass

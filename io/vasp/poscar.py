@@ -12,6 +12,7 @@ import numpy as np
 from public.tools.periodic_table import PTable
 from public.composition import Composition
 from public.lattice import Lattice
+from public.structure import Structure
 
 
 class Poscar:
@@ -26,41 +27,16 @@ class Poscar:
         self.composition = None
         self.volume = None
         self.numberOfSites = None
-        self.ionicSteps = None
-        self.electronicSteps = None
-        self.thermoDynamicProperties = None
-        self.hasSetup = False
-        self.calculationType = None
-        self.simplestFormula = None
-        self.generalFormula = None
-        self.numberOfElements = None
-        self.spaceGroup = None
-        self.pointGroup = None
-        self.crystalSystem = None
-        self.resourceUsage = None
-        self.cellStress_s = None
-        self.cellStress_e = None
-        self.electronicProperties = None
-        self.magneticProperties = None
-        self.atomicCharge = None
-        self.atomicMagnetization = None
-        self.totalDos = None
-        self.partialDos = None
-        self.kPoints = None
-        self.eigenValues = None
-        self.gapFromBand = None
-        self.gapFromDos = None
-        self.projectedEigen = None
-        self.dielectricData = None
-        self.opticalProperties = None
-        self.linearMagneticMoment = None
-        self.elasticProperties = None
+        self.structure = None
 
     def setup(self):
         self.lattice = self.getLattice()
         self.composition = self.getComposition()
         self.volume = self.getVolume()
         self.numberOfSites = self.getNumberOfSites()
+        self.structure = Structure(lattice=self.lattice, composition=self.composition,sites=None)
+        self.structure.setup()
+
 
     def getComposition(self):
         elements = self.lines[5].split()
