@@ -9,6 +9,10 @@
 @Description: Parser INCAR File
 """
 
+import os
+import linecache
+from public.calculation_type import CalType
+
 
 class Incar:
     """
@@ -19,13 +23,54 @@ class Incar:
         self.filepath = filepath
         self.dict = {}
         self.calculationType = None
+        self.kpoint_path = self.findKpointPath()
         with open(self.filepath, 'r') as f:
             self.lines = f.readlines()
             for line in self.lines:
                 if '=' in line:
                     line = line.split('=')
-                    self.dict[line[0].strip(' ')] = line[1].strip(' ').strip('\n')
+                    key = line[0].strip(' ')
+                    value = line[0].strip(' ').strip('\n')
+                    try:
+                        value=float(value) if '.' in value else int(value)
+                    except ValueError:
+                        pass
+                    self.dict[key] = value
             f.close()
+
+    def findKpointPath(self):
+        directory = os.path.dirname(self.filepath)
+        kPointPath = os.path.join(directory, 'KPOINTS')
+        return kPointPath if os.path.exists(kPointPath) else None
+
+    def getCalType(self):
+        para_list = ['IBRION', 'LORBIT', 'LOPTICS', 'LEPSILON', 'LCALCEPS', 'ISIF', 'MAGMOM']
+        parameters = {key: self.dict.get(key, None) for key in para_list}
+
+        if parameters['IBRION'] in [1, 2, 3]:
+            return CalType.GeometryOptimization
+        if parameters['IBRION'] == -1 and parameters.get('KPOINT') and self.kpoint_path and linecache.getline(
+                self.kpoint_path, 3).lower().startswith('l'):
+            return CalType.BandStructure
+        if ('LOPTICS' in parameters and parameters['LOPTICS']) or parameters['IBRION'] in [7, 8] or \
+                (parameters['IBRION'] == 5 and (
+                        'LEPSILON' in parameters and parameters['LEPSILON'] or 'LCALCEPS' in parameters and parameters[
+                    'LCALCEPS'])) or \
+                (parameters['IBRION'] == 6 and (
+                        'LEPSILON' in parameters and parameters['LEPSILON'] or 'LCALCEPS' in parameters and parameters[
+                    'LCALCEPS'])):
+            return CalType.DielectricProperties
+        if parameters['IBRION'] == -1 and parameters['LORBIT']:
+            return CalType.DensityOfStates
+        if parameters['IBRION'] == -1:
+            return CalType.StaticCalculation
+        if parameters['IBRION'] in [5, 6] and parameters['ISIF'] >= 3:
+            return CalType.ElasticProperties
+        if 'MAGMOM' in parameters:
+            return CalType.MagneticProperties
+
+        raise ValueError('无法判断提取类型，无法提取')
+
     def fill_parameters(self, paradict: dict):
         """
         向paradict中填充incar文件中多出的参数

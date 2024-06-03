@@ -21,7 +21,7 @@ from public.sites import Site, Atom
 from public.composition import Composition
 from public.tools.helper import parseVarray
 from public.calculation_type import CalType
-
+from entries.calculations import CalculateEntries
 
 class Vasprun:
 
