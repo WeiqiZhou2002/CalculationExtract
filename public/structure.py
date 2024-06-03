@@ -32,6 +32,7 @@ class Structure():
                  lattice: Lattice = None,
                  composition: List[Composition] = None,
                  sites: List[Site] = None):
+        self.compositionDoc = None
         self.lattice = lattice
         self.composition = composition
         self.sites = sites
@@ -75,6 +76,7 @@ class Structure():
         self.highSymmetryKPath = self.getHighSymmetryKPath()
         self.sitesDoc = self.getSitesList()
         self.hashId = self.getHashValue()
+        self.compositionDoc = self.getCompositionList()
         # 判断空间群是否匹配
         spg = SpaceGroup(self.spaceGroup['spacegroupSymbol'])
         lattice = PyLattice(self.conventionalLattice)
@@ -438,6 +440,14 @@ class Structure():
             sitesList.append(doc)
         return sitesList
 
+    def getCompositionList(self):
+        if self.composition is None:
+            raise ValueError('composition 不能为空')
+        compositionList = []
+        for element in self.composition:
+            compositionList.append(element.as_dict())
+        return compositionList
+
     def getHashValue(self):
         hash_sites = []
         if self.sitesDoc is None:
@@ -465,7 +475,7 @@ class Structure():
             "GeneralFormula": self.generalFormula,  # 新增
             "NumberOfElements": self.numberOfElements,
             "NumberOfSites": self.numberOfSites,
-            "Composition": self.composition,
+            "Composition": self.compositionDoc, #更改
             "Stoichiometry": self.stoichiometry,
             "LatticeParameters": self.latticeParameters,
             "Lattice": self.lattice.matrix.tolist(),
