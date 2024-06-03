@@ -15,9 +15,8 @@ from public.lattice import Lattice
 
 
 class Poscar:
-    def __init__(self, poscarPath, collections):
+    def __init__(self, poscarPath):
         self.poscarPath = poscarPath
-        self.collections = collections
 
         if self.poscarPath is None:
             raise ValueError('File content error, not parse!')

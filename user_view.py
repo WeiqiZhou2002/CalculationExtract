@@ -10,7 +10,6 @@
 """
 
 from entries.calculations import CalculateEntries
-from public.calculation_type import CalType
 from io.vasp.incar import Incar
 from io.vasp.poscar import Poscar
 from io.vasp.kpoints import Kpoints
@@ -22,10 +21,8 @@ import os
 from tqdm import tqdm
 
 
-calType = CalType.BandStructure
-cal = CalculateEntries[calType]()
-print(cal)
 input_files = {'INCAR', 'KPOINT', 'OSZICAR', 'OUTCAR', 'POSCAR', 'vasprun.xml'}
+
 
 def vasp_extract(root_path: str):
     """
@@ -40,7 +37,7 @@ def vasp_extract(root_path: str):
         # 根据文件名创建 解析类，对文件进行解析
         # 保存在字典格式中 {'incar': Incar(), 'poscar': Poscar(), 'outcar': Outcar(), 'locpot': Locpot()}
         file_parsers = {}
-        #遍历目录中所有文件
+        # 遍历目录中所有文件
         for file_name in os.listdir(file):
             full_path = os.path.join(file, file_name)
             if file_name.upper() == 'INCAR':
@@ -57,17 +54,17 @@ def vasp_extract(root_path: str):
                 file_parsers['kpoints'] = Kpoints(full_path)
             elif file_name.upper() == 'OSZICAR':
                 file_parsers['oszicar'] = Oszicar(full_path)
-        # 从Incar  或 Vasprun对象中获取计算类型
-        if 'incar' in file_parsers:
-            cal_type = file_parsers['incar'].calculationType
-        elif 'vasprun' in file_parsers:
+        # 从Incar  或 Vasprun对象中获取计算类型，优先vasprun
+        if 'vasprun' in file_parsers:
             cal_type = file_parsers['vasprun'].calculationType
+        elif 'incar' in file_parsers:
+            cal_type = file_parsers['incar'].calculationType
         else:
             raise ValueError(
                 f"INCAR or vasprun.xml file is required to determine the calculation type in directory {file}")
 
         # 根据计算类型创建计算对象
-        cal_entry = CalculateEntries[calType](file_parsers)
+        cal_entry = CalculateEntries[cal_type](file_parsers)
         bson = cal_entry.to_bson()
         # 保存到数据库
         # to_mongo

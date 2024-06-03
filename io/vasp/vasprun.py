@@ -13,6 +13,7 @@ import time
 import xml.etree.cElementTree as ET
 import numpy as np
 import linecache
+import os
 
 from public.tools.periodic_table import PTable
 from public.lattice import Lattice
@@ -24,14 +25,14 @@ from public.calculation_type import CalType
 
 class Vasprun:
 
-    def __init__(self, vaspPath, collections):
+    def __init__(self, vaspPath):
         self.vaspPath = vaspPath
-        self.collections = collections
         tree = ET.parse(vaspPath)
         if tree is None:
             raise ValueError('File content error, not parse!')
         self.root = tree.getroot()
         self.calculationType = None
+        self.kPointPath = None
         self.lattice_s = None
         self.lattice_e = None
         self.latticeParameters_s = None
@@ -89,6 +90,7 @@ class Vasprun:
         self.startTime = self.getStartTime()
         self.software = self.getSoftware()
         self.kPoints = self.getKPoints()
+        self.kPointPath = self.findKpointPath()
 
     def findPara(self, parameters: list):
         """
@@ -164,6 +166,11 @@ class Vasprun:
         if 'MAGMOM' in parameters.keys():
             return CalType.MagneticProperties
         raise ValueError('无法判断提取类型，无法提取')
+
+    def findKpointPath(self):
+        directory = os.path.dirname(self.vaspPath)
+        kPointPath = os.path.join(directory, 'KPOINTS')
+        return kPointPath if os.path.exists(kPointPath) else None
 
     def getLatticeParameters(self, isinit: bool = False):
         if isinit:
