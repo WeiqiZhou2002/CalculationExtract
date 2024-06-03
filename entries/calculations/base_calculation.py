@@ -9,10 +9,11 @@
 @Description: 
 """
 from abc import ABC, abstractmethod
-from public.structure import Structure
 from public.tools.Electronic import Spin
 from public.tools.helper import parseVarray
 import numpy as np
+
+from public.tools.periodic_table import PTable
 
 
 class BaseCalculation(ABC):
@@ -145,6 +146,33 @@ class BaseCalculation(ABC):
                 }
                 electronicSteps.append(doc)
         return electronicSteps
+
+    def getThermoDynamicProperties(self):
+        child = self.vasprunParser.root.find("./calculation[last()]/energy/i[@name='e_fr_energy']")
+        totalenergy = float(child.text)
+        child = self.vasprunParser.root.find("./calculation[last()]/dos/i[@name='efermi']")
+        numberofatoms = int(self.vasprunParser.root.find("./atominfo/atoms").text)
+        fermienergy = float(child.text)
+        energyPerAtom = totalenergy / numberofatoms
+        formation_energy = 0.0
+        composition = self.vasprunParser.composition
+        energy_atoms = 0.
+        for comp in composition:
+            if comp.atomic_symbol in PTable().atom_energy:
+                energy_atoms += PTable().atom_energy[comp.atomic_symbol] * comp.amount
+            else:
+                energy_atoms = 0.
+                break
+        if energy_atoms != 0.:
+            formation_energy = (totalenergy - energy_atoms) / self.vasprunParser.numberOfSites
+
+        doc = {
+            'TotalEnergy': totalenergy,
+            'FermiEnergy': fermienergy,
+            'EnergyPerAtom': energyPerAtom,
+            'FormationEnergy': formation_energy
+        }
+        return doc
 
 
     @abstractmethod
