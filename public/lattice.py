@@ -10,12 +10,13 @@
 """
 import numpy as np
 from monty.json import MSONable
+from typing import List,Union
 from numpy._typing import ArrayLike
 from public.tools.typing import PbcLike
 
 
 class Lattice(MSONable):
-    def __init__(self, matrix: ArrayLike) -> None:
+    def __init__(self, matrix: Union[List[float], List[List[float]], np.ndarray]) -> None:
         matrix = np.array(matrix, dtype=np.float64).reshape((3, 3))
         matrix.setflags(write=False)
         self.matrix = matrix

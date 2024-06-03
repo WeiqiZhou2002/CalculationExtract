@@ -18,6 +18,7 @@ class Incar:
     def __init__(self, filepath):
         self.filepath = filepath
         self.dict = {}
+        self.calculationType = None
         with open(self.filepath, 'r') as f:
             self.lines = f.readlines()
             for line in self.lines:

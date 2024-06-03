@@ -8,10 +8,11 @@
 @Date       : 2024/5/30 16:22
 @Description:
 """
-import math
+
 import time
 import xml.etree.cElementTree as ET
 import numpy as np
+import linecache
 
 from public.tools.periodic_table import PTable
 from public.lattice import Lattice
@@ -26,11 +27,11 @@ class Vasprun:
     def __init__(self, vaspPath, collections):
         self.vaspPath = vaspPath
         self.collections = collections
-
         tree = ET.parse(vaspPath)
         if tree is None:
             raise ValueError('File content error, not parse!')
         self.root = tree.getroot()
+        self.calculationType = None
         self.lattice_s = None
         self.lattice_e = None
         self.latticeParameters_s = None
@@ -75,9 +76,10 @@ class Vasprun:
         self.elasticProperties = None
 
     def setup(self):
-        self.lattice_s, self.latticeParameters_s = self.getLatticeParameters(isinit=True)
-        self.lattice_e, self.latticeParameters_e = self.getLatticeParameters(isinit=False)
+        self.lattice_s = self.getLatticeParameters(isinit=True)
+        self.lattice_e = self.getLatticeParameters(isinit=False)
         self.composition = self.getComposition()
+        self.calculationType = self.getCalType()
         self.parameters = self.getParameters()
         self.sites_s = self.getSites(isinit=True)
         self.sites_e = self.getSites(isinit=False)
@@ -137,34 +139,44 @@ class Vasprun:
         return parameters_dict
 
 
+    def getCalType(self):
+        para_list = ['IBRION', 'LORBIT', 'LOPTICS', 'LEPSILON', 'LCALCEPS', 'ISIF', 'MAGMOM']
+        parameters = self.findPara(para_list)
+        if parameters['IBRION'] == 1 or parameters['IBRION'] == 2 or parameters['IBRION'] == 3:
+            return CalType.GeometryOptimization
+        if parameters['IBRION'] == -1 and linecache.getline(self.kPointPath, 3).lower().startswith(
+                'l'):  # kpoints generation para
+            return CalType.BandStructure
+        if ('LOPTICS' in parameters.keys() and parameters['LOPTICS']) or parameters['IBRION'] == 7 or parameters[
+            'IBRION'] == 8 \
+                or (parameters['IBRION'] == 5 and (('LEPSILON' in parameters.keys() and parameters['LEPSILON']) or (
+                'LCALCEPS' in parameters.keys() and parameters['LCALCEPS']))) \
+                or (parameters['IBRION'] == 6 and (('LEPSILON' in parameters.keys() and parameters['LEPSILON']) or (
+                'LCALCEPS' in parameters.keys() and parameters['LCALCEPS']))):
+            return CalType.DielectricProperties
+        if parameters['IBRION'] == -1 and parameters['LORBIT']:
+            return CalType.DensityOfStates
+        if parameters['IBRION'] == -1:
+            return CalType.StaticCalculation
+        if (parameters['IBRION'] == 5 or parameters['IBRION'] == 6) and parameters['ISIF'] >= 3:
+            return CalType.ElasticProperties
+
+        if 'MAGMOM' in parameters.keys():
+            return CalType.MagneticProperties
+        raise ValueError('无法判断提取类型，无法提取')
+
     def getLatticeParameters(self, isinit: bool = False):
         if isinit:
             child = self.root.find("./structure[@name='initialpos']/crystal/varray[@name='basis']")
         else:
             child = self.root.find("./structure[@name='finalpos']/crystal/varray[@name='basis']")
-        a = child[0].text.split()
-        a = [float(i) for i in a]
-        b = child[1].text.split()
-        b = [float(i) for i in b]
-        c = child[2].text.split()
-        c = [float(i) for i in c]
-        lattice = Lattice([a, b, c])
-
-        a0 = math.sqrt(np.dot(a, a))
-        b0 = math.sqrt(np.dot(b, b))
-        c0 = math.sqrt(np.dot(c, c))
-        alpha = np.arccos(np.dot(a, c) / (a0 * c0))
-        beta = np.arccos(np.dot(b, c) / (b0 * c0))
-        gamma = np.arccos(np.dot(a, b) / (a0 * b0))
-        latticeParameters = {
-            'a': a0,
-            'b': b0,
-            'c': c0,
-            'alpha': alpha,
-            'beta': beta,
-            'gamma': gamma
-        }
-        return lattice, latticeParameters
+        matrix = [
+            list(map(float,child[0].text.split())),
+            list(map(float, child[1].text.split())),
+            list(map(float, child[2].text.split()))
+        ]
+        lattice = Lattice(matrix)
+        return lattice
 
     def getComposition(self):
         composition = {}

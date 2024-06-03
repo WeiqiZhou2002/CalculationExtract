@@ -59,9 +59,9 @@ def vasp_extract(root_path: str):
                 file_parsers['oszicar'] = Oszicar(full_path)
         # 从Incar  或 Vasprun对象中获取计算类型
         if 'incar' in file_parsers:
-            cal_type = file_parsers['incar'].cal_type()
+            cal_type = file_parsers['incar'].calculationType
         elif 'vasprun' in file_parsers:
-            cal_type = file_parsers['vasprun'].cal_type()
+            cal_type = file_parsers['vasprun'].calculationType
         else:
             raise ValueError(
                 f"INCAR or vasprun.xml file is required to determine the calculation type in directory {file}")
@@ -70,6 +70,7 @@ def vasp_extract(root_path: str):
         cal_entry = CalculateEntries[calType](file_parsers)
         bson = cal_entry.to_bson()
         # 保存到数据库
+        # to_mongo
 
 def findPaths(rootPath):
     total_path = []
