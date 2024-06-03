@@ -21,7 +21,7 @@ from public.tools.helper import parseVarray
 from public.calculation_type import CalType
 
 
-class VasprunParser:
+class Vasprun:
 
     def __init__(self, vaspPath, collections):
         self.vaspPath = vaspPath

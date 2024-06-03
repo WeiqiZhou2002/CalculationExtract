@@ -14,7 +14,7 @@ from public.composition import Composition
 from public.lattice import Lattice
 
 
-class PoscarParser:
+class Poscar:
     def __init__(self, poscarPath, collections):
         self.poscarPath = poscarPath
         self.collections = collections

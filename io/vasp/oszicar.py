@@ -11,7 +11,7 @@
 import os.path
 
 
-class OsziCar:
+class Oszicar:
     """
     解析oszicar文件
     """

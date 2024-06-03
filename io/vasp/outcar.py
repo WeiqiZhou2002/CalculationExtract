@@ -14,7 +14,7 @@ import numpy as np
 from monty.io import reverse_readfile, zopen
 
 
-class OutCar:
+class Outcar:
     """
     parser outcar
     """
