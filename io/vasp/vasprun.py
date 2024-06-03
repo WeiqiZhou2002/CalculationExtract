@@ -33,16 +33,16 @@ class Vasprun:
         self.root = tree.getroot()
         self.calculationType = None
         self.kPointPath = None
-        self.lattice_s = None
-        self.lattice_e = None
-        self.latticeParameters_s = None
-        self.latticeParameters_e = None
+        self.lattice_init = None
+        self.lattice_final = None
+        self.latticeParameters_init = None
+        self.latticeParameters_final = None
         self.composition = None
         self.parameters = None
-        self.sites_s = None
-        self.sites_e = None
-        self.volume_s = None
-        self.volume_e = None
+        self.sites_init = None
+        self.sites_final = None
+        self.volume_init = None
+        self.volume_final = None
         self.numberOfSites = None
         self.startTime = None
         self.software = None
@@ -58,8 +58,8 @@ class Vasprun:
         self.pointGroup = None
         self.crystalSystem = None
         self.resourceUsage = None
-        self.cellStress_s = None
-        self.cellStress_e = None
+        self.cellStress_init = None
+        self.cellStress_final = None
         self.electronicProperties = None
         self.magneticProperties = None
         self.atomicCharge = None
@@ -77,15 +77,15 @@ class Vasprun:
         self.elasticProperties = None
 
     def setup(self):
-        self.lattice_s = self.getLatticeParameters(isinit=True)
-        self.lattice_e = self.getLatticeParameters(isinit=False)
+        self.lattice_init = self.getLatticeParameters(isinit=True)
+        self.lattice_final = self.getLatticeParameters(isinit=False)
         self.composition = self.getComposition()
         self.calculationType = self.getCalType()
         self.parameters = self.getParameters()
-        self.sites_s = self.getSites(isinit=True)
-        self.sites_e = self.getSites(isinit=False)
-        self.volume_s = self.getVolume(isinit=True)
-        self.volume_e = self.getVolume(isinit=False)
+        self.sites_init = self.getSites(isinit=True)
+        self.sites_final = self.getSites(isinit=False)
+        self.volume_init = self.getVolume(isinit=True)
+        self.volume_final = self.getVolume(isinit=False)
         self.numberOfSites = self.getNumberOfSites()
         self.startTime = self.getStartTime()
         self.software = self.getSoftware()

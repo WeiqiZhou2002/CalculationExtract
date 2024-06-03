@@ -20,7 +20,6 @@ from io.vasp.vasprun import Vasprun
 import os
 from tqdm import tqdm
 
-
 input_files = {'INCAR', 'KPOINT', 'OSZICAR', 'OUTCAR', 'POSCAR', 'vasprun.xml'}
 
 
@@ -68,6 +67,7 @@ def vasp_extract(root_path: str):
         bson = cal_entry.to_bson()
         # 保存到数据库
         # to_mongo
+
 
 def findPaths(rootPath):
     total_path = []

@@ -59,11 +59,8 @@ class Poscar:
     def setup(self):
         self.lattice = self.getLattice()
         self.composition = self.getComposition()
-        self.sites_s = self.getSites(isinit=True)
-        self.sites_e = self.getSites(isinit=False)
         self.volume = self.getVolume()
         self.numberOfSites = self.getNumberOfSites()
-        self.kPoints = self.getKPoints()
 
     def getComposition(self):
         elements = self.lines[5].split()

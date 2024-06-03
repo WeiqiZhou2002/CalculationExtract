@@ -10,7 +10,7 @@
 """
 import numpy as np
 from monty.json import MSONable
-from typing import List,Union
+from typing import List, Union
 from numpy._typing import ArrayLike
 from public.tools.typing import PbcLike
 
@@ -21,7 +21,7 @@ class Lattice(MSONable):
         matrix.setflags(write=False)
         self.matrix = matrix
 
-    def from_parameters(self, a, b, c, alpha, beta, gamma) :
+    def from_parameters(self, a, b, c, alpha, beta, gamma):
         """
         从晶胞参数构建晶格矩阵
         :param a:
@@ -53,4 +53,3 @@ if __name__ == '__main__':
     la = Lattice.from_parameters(1, 1, 1, 90, 90, 90)
     print(lattice.matrix)
     print(lattice.as_dict())
-
