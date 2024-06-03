@@ -475,7 +475,7 @@ class Structure():
             "GeneralFormula": self.generalFormula,  # 新增
             "NumberOfElements": self.numberOfElements,
             "NumberOfSites": self.numberOfSites,
-            "Composition": self.compositionDoc, #更改
+            "Composition": self.compositionDoc,  # 更改
             "Stoichiometry": self.stoichiometry,
             "LatticeParameters": self.latticeParameters,
             "Lattice": self.lattice.matrix.tolist(),

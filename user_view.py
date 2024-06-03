@@ -55,9 +55,9 @@ def vasp_extract(root_path: str):
                 file_parsers['oszicar'] = Oszicar(full_path)
         # 从Incar  或 Vasprun对象中获取计算类型，优先vasprun
         if 'vasprun' in file_parsers:
-            cal_type = file_parsers['vasprun'].calculationType
+            cal_type = file_parsers['vasprun'].getCalType()
         elif 'incar' in file_parsers:
-            cal_type = file_parsers['incar'].calculationType
+            cal_type = file_parsers['incar'].getCalType()
         else:
             raise ValueError(
                 f"INCAR or vasprun.xml file is required to determine the calculation type in directory {file}")
