@@ -8,13 +8,3 @@
 @Date       : 2024/5/30 17:05 
 @Description: 
 """
-
-
-class Bson:
-    def __init__(self, object):
-        self.object = object
-        pass
-
-
-    def to_bson(self):
-        pass
