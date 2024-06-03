@@ -21,6 +21,8 @@ class BaseCalculation(ABC):
         self.structure = None
         self.file_parser = file_parsers
         self.parm = None
+        if file_parsers['outcar'] is not None:
+            self.outcarParser = file_parsers['outcar']
         if file_parsers['vasprun'] is not None:
             self.vasprunParser = file_parsers['vasprun']
             self.input_structure = self.vasprunParser.input_structure
@@ -44,6 +46,7 @@ class BaseCalculation(ABC):
             self.basicDoc = {
                 'InputStructure': {},
                 'OutputStructure': self.output_structure.to_bson(),
+                'ResourceUsage': self.outcarParser.getResourceUsage(),
                 'ProcessData': {},
                 'Properties': {},
                 'Files': [],
@@ -52,7 +55,7 @@ class BaseCalculation(ABC):
         else:
             raise ValueError("不可同时无vasprun或poscar和incar")
         self.parm = file_parsers['incar'].fill_parameters(self.parm)
-        self.outcarParser = file_parsers['outcar']
+
         self.oszicarParser = file_parsers['oszicar']
 
     def getEigenValues(self):
