@@ -379,3 +379,35 @@ class Vasprun:
         child = self.root.find("./kpoints/varray[@name='kpointlist']")
         data = parseVarray(child)
         return data
+
+
+    def getDielectricData(self):
+        """
+            提取与频率相关的介电函数数据
+            :return:
+        """
+        # dielectricData = {}
+        energy = []
+        imag_part = []
+        real_part = []
+        imag = []
+        real = []
+        for event, elem in ET.iterparse(self.vaspPath):
+            tag = elem.tag
+            if tag == "dielectricfunction":
+                imag = [[float(l) for l in r.text.split()] for r in
+                        elem.find("imag").find("array").find("set").findall("r")]
+                real = [[float(l) for l in r.text.split()] for r in
+                        elem.find("real").find("array").find("set").findall("r")]
+                break  # break 多个 dielectricfunction 只取得第一个die..
+        for e in imag:
+            energy.append(e[0])
+            imag_part.append(e[1:])
+        for e in real:
+            real_part.append(e[1:])
+        dielectricData = {
+            'Energy': energy,
+            'real_part': real_part,
+            'imag_part': imag_part
+        }
+        return dielectricData
