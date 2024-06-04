@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+"""
+@Project    : CalculationExtract 
+@File       : poscar.py
+@IDE        : PyCharm 
+@Author     : zychen@cnic.cn
+@Date       : 2024/5/30 16:30 
+@Description: 
+"""
+import numpy as np
+from public.tools.periodic_table import PTable
+from public.composition import Composition
+from public.lattice import Lattice
+from public.structure import Structure
+
+
+class Poscar:
+    def __init__(self, filename):
+        self.filename = filename
+
+        if self.filename is None:
+            raise ValueError('File content error, not parse!')
+        with open(self.filename, 'r') as f:
+            self.lines = f.readlines()
+        self.lattice = None
+        self.composition = None
+        self.volume = None
+        self.numberOfSites = None
+        self.structure = None
+
+    def setup(self):
+        self.lattice = self.getLattice()
+        self.composition = self.getComposition()
+        self.volume = self.getVolume()
+        self.numberOfSites = self.getNumberOfSites()
+        self.structure = Structure(lattice=self.lattice, composition=self.composition,sites=None)
+        self.structure.setup()
+
+
+    def getComposition(self):
+        elements = self.lines[5].split()
+        counts = list(map(int, self.lines[6].split()))
+        composition = []
+        for element, count in zip(elements, counts):
+            composition.append(Composition(atomic_symbol=element,
+                                           atomic_number=PTable().detailed[element]["Atomic no"],
+                                           atomic_mass=PTable().detailed[element]["Atomic mass"],
+                                           amount=count))
+        return composition
+
+    def getLattice(self):
+        matrix = [
+            list(map(float, self.lines[2].split())),
+            list(map(float, self.lines[3].split())),
+            list(map(float, self.lines[4].split()))
+        ]
+        lattice = Lattice(matrix)
+
+        return lattice
+
+    def getVolume(self):
+        matrix = np.array([
+            list(map(float, self.lines[2].split())),
+            list(map(float, self.lines[3].split())),
+            list(map(float, self.lines[4].split()))
+        ])
+        vol = np.dot(matrix[0], np.cross(matrix[1], matrix[2]))
+        return float(abs(vol))
+
+    def getNumberOfSites(self):
+        counts = list(map(int, self.lines[6].split()))
+        number_of_sites_from_counts = sum(counts)
+        return number_of_sites_from_counts

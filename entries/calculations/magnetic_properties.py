@@ -39,8 +39,8 @@ class MagneticProperties(BaseCalculation):
                 'LinearMagneticMoment': self.linearMagneticMoment,
             },
         }
-        doc['Files'] = [self.vasprunParser.vaspPath, self.file_parser['incar'].filepath,
-                        self.file_parser['outcar'].filepath, self.file_parser['kpoint'].filepath,
-                        self.file_parser['oszicar'].filepath]
+        doc['Files'] = [self.vasprunParser.vaspPath, self.file_parser['incar'].filename,
+                        self.file_parser['outcar'].filename, self.file_parser['kpoint'].filename,
+                        self.file_parser['oszicar'].filename]
 
         return doc

@@ -9,23 +9,23 @@
 @Description: 
 """
 import sys
-from datetime import time
+import time
 
 from db.mongo.mongo_client import Mongo
 from entries.calculations import CalculateEntries
-from io.vasp.incar import Incar
-from io.vasp.poscar import Poscar
-from io.vasp.kpoints import Kpoints
-from io.vasp.outcar import Outcar
-from io.vasp.oszicar import Oszicar
-from io.vasp.locpot import Locpot
-from io.vasp.vasprun import Vasprun
+from i_o.vasp.incar import Incar
+from i_o.vasp.poscar import Poscar
+from i_o.vasp.kpoints import Kpoints
+from i_o.vasp.outcar import Outcar
+from i_o.vasp.oszicar import Oszicar
+from i_o.vasp.locpot import Locpot
+from i_o.vasp.vasprun import Vasprun
 import os
 from tqdm import tqdm
 
 from public.calculation_type import CalType
 
-input_files = {'INCAR', 'KPOINT', 'OSZICAR', 'OUTCAR', 'POSCAR', 'vasprun.xml'}
+input_files = {'INCAR', 'KPOINTS', 'OSZICAR', 'OUTCAR', 'POSCAR', 'vasprun.xml'}
 
 
 def vasp_extract(root_path: str, log):
@@ -99,7 +99,7 @@ def vasp_extract(root_path: str, log):
                 file_parsers['locpot'] = Locpot(full_path)
             elif file_name.lower() == 'vasprun.xml':
                 file_parsers['vasprun'] = Vasprun(full_path)
-            elif file_name.upper() == 'KPOINT':
+            elif file_name.upper() == 'KPOINTS':
                 file_parsers['kpoints'] = Kpoints(full_path)
             elif file_name.upper() == 'OSZICAR':
                 file_parsers['oszicar'] = Oszicar(full_path)
@@ -116,7 +116,7 @@ def vasp_extract(root_path: str, log):
         cal_entry = CalculateEntries[cal_type](file_parsers)
         bson = cal_entry.to_bson()
         # 保存到数据库
-        mongo = Mongo(host=host,port=port,db=database,collection=collections)
+        mongo = Mongo(host=host,port=port,db=database,collection=cal_type)
         # to_mongo
         mongo.save_one(bson)
 

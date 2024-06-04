@@ -21,10 +21,13 @@ class BaseCalculation(ABC):
         self.structure = None
         self.file_parser = file_parsers
         self.parm = None
-        if file_parsers['outcar'] is not None:
+        if 'outcar' in file_parsers:
             self.outcarParser = file_parsers['outcar']
-        if file_parsers['vasprun'] is not None:
+        else:
+            self.outcarParser = None
+        if 'vasprun' in file_parsers:
             self.vasprunParser = file_parsers['vasprun']
+            self.vasprunParser.setup()
             self.input_structure = self.vasprunParser.input_structure
             self.output_structure = self.vasprunParser.output_structure
             self.basicDoc = {
@@ -40,8 +43,9 @@ class BaseCalculation(ABC):
                 'CalculationType': self.vasprunParser.calculationType
             }
             self.parm=self.vasprunParser.parameters
-        elif file_parsers['poscar'] is not None and file_parsers['incar'] is not None:
+        elif 'poscar'in file_parsers and 'incar'in file_parsers:
             poscarParser = file_parsers['poscar']
+            poscarParser.setup()
             self.output_structure = poscarParser.structure
             self.basicDoc = {
                 'InputStructure': {},
@@ -55,9 +59,10 @@ class BaseCalculation(ABC):
         else:
             raise ValueError("不可同时无vasprun或poscar和incar")
         self.parm = file_parsers['incar'].fill_parameters(self.parm)
-
-        self.oszicarParser = file_parsers['oszicar']
-
+        if 'oszicar' in file_parsers:
+            self.oszicarParser = file_parsers['oszicar']
+        else:
+            self.oszicarParser = None
     def getEigenValues(self):
         """
         提取本征值数据
