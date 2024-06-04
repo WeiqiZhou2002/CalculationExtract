@@ -13,10 +13,18 @@ from pymongo import MongoClient
 
 class Mongo:
     def __init__(self, host, port, db, collection):
-        pass
+        self.conn = MongoClient(host=host, port=port)
+        self.db = self.conn[db]
+        self.collection = self.db[collection]
+
 
     def save_one(self, data):
-        pass
+        object_id = self.collection.insert_one(data).inserted_id
+        self.conn.close()
+        return object_id
 
     def save_many(self, data):
-        pass
+        object_ids = self.collection.insert_many(data).inserted_ids
+        self.conn.close()
+        return object_ids
+
