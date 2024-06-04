@@ -8,7 +8,10 @@
 @Date       : 2024/5/30 17:12 
 @Description: 
 """
+import sys
+from datetime import time
 
+from db.mongo.mongo_client import Mongo
 from entries.calculations import CalculateEntries
 from io.vasp.incar import Incar
 from io.vasp.poscar import Poscar
@@ -20,15 +23,62 @@ from io.vasp.vasprun import Vasprun
 import os
 from tqdm import tqdm
 
+from public.calculation_type import CalType
+
 input_files = {'INCAR', 'KPOINT', 'OSZICAR', 'OUTCAR', 'POSCAR', 'vasprun.xml'}
 
 
-def vasp_extract(root_path: str):
+def vasp_extract(root_path: str, log):
     """
 
     :param root_path:
     :return:
     """
+    print(os.getcwd())
+    s = time.strftime("%Y-%m-%d_%H_%M_%S")
+    print('Vasp files extraction task start ..........')
+
+    database = input('please input database name: (default: VaspData)')
+    if database == '':
+        database = 'VaspData'
+    collections = []
+    collections_all = [CalType.BandStructure, CalType.StaticCalculation, CalType.GeometryOptimization,
+                       CalType.DensityOfStates, CalType.DielectricProperties, CalType.ElasticProperties,
+                       CalType.MagneticProperties]
+    collect = input(
+        'please select collections: \n1.BandStructure, \n2.StaticCalculation, \n3.GeometryOptimization, \n4.DensityOfStates, \n5.DielectricProperties, \n6.ElasticProperties, \n7.MagneticProperties.\n input nums（1 2 4）')
+    if collect == '':
+        collections = collections_all
+    else:
+        for i in collect.split():
+            collections.append(collections_all[int(i) - 1])
+    host = input('please input db host: (default localhost)')
+    if host == '':
+        host = 'localhost'
+    port = input('please input db port: (default 27017)')
+    if port == '':
+        port = '27017'
+    port = int(port)
+    user = input('please input source user: (default: vasp)')
+    if user == '':
+        user = 'vasp'
+    group = input(f'please input source user group: (default: {user})')
+    if group == '':
+        group = user
+    file_list = findPaths(root_path)
+    print('Files Dir：', root_path)
+    print('Files Number：', len(file_list))
+    print('User：', user)
+    print('Group：', group)
+    print('Database：', database)
+    print('Collections：', collections)
+    print('host & port：', host, ' ', port)
+    error_files = {'no_take': [], 'error': []}
+    if log:
+        outfile_path = os.path.join(os.getcwd(), 'log', database + '_' + user + '_' + group + '_' + s + '.txt')
+        outFile = open(outfile_path, 'w', encoding='utf8')
+    else:
+        outFile = sys.stdout
     # 找到所有的vasp计算文件夹
     file_list = findPaths(root_path)
     for file in tqdm(file_list, total=len(file_list)):
@@ -66,7 +116,9 @@ def vasp_extract(root_path: str):
         cal_entry = CalculateEntries[cal_type](file_parsers)
         bson = cal_entry.to_bson()
         # 保存到数据库
+        mongo = Mongo(host=host,port=port,db=database,collection=collections)
         # to_mongo
+        mongo.save_one(bson)
 
 
 def findPaths(rootPath):
