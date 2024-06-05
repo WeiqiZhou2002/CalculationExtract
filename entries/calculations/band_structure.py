@@ -28,11 +28,10 @@ class BandStructure(BaseCalculation):
                     能带能隙
                     :return
                 """
-        if self.vasprunParser is None:
+        if self.vasprunParser is not None:
+            eigenval = self.vasprunParser.getEigenValues()
+        else:
             return {}
-        eigenval = self.vasprunParser.eigenValues
-        if eigenval is None:
-            eigenval = self.getEigenValues()
         isSpin = eigenval["IsSpinPolarized"]
         number = eigenval["NumberOfGeneratedKPoints"]
         BandsNum = eigenval["NumberOfBand"]

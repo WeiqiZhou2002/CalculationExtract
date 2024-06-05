@@ -20,7 +20,7 @@ class EigenValues:
         self.kpoints = kpoints
         self.eigenvalues = eigenvalues
 
-class EigenvalFile:
+class Eigenval:
     def __init__(self, filename):
         self.filename = filename
         with open(self.filename, 'r') as f:

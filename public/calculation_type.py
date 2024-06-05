@@ -1,3 +1,7 @@
+import linecache
+import os
+
+
 class CalType(enumerate):
     BandStructure = 'BandStructure'
     StaticCalculation = 'StaticCalculation'
