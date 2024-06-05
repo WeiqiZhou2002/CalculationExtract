@@ -30,7 +30,7 @@ class Incar:
                 if '=' in line:
                     line = line.split('=')
                     key = line[0].strip(' ')
-                    value = line[0].strip(' ').strip('\n')
+                    value = line[1].split('#')[0].strip(' ').strip('\n')
                     try:
                         value=float(value) if '.' in value else int(value)
                     except ValueError:
@@ -78,7 +78,10 @@ class Incar:
         :return:
         """
         paradict = paradict
-        for key in self.dict:
-            if key not in paradict.keys():
-                paradict[key] = self.dict[key]
+        if paradict is not None:
+            for key in self.dict:
+                if key not in paradict.keys():
+                    paradict[key] = self.dict[key]
+        else:
+            paradict=self.dict
         return paradict

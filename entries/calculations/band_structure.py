@@ -28,6 +28,8 @@ class BandStructure(BaseCalculation):
                     能带能隙
                     :return
                 """
+        if self.vasprunParser is None:
+            return {}
         eigenval = self.vasprunParser.eigenValues
         if eigenval is None:
             eigenval = self.getEigenValues()
@@ -176,7 +178,8 @@ class BandStructure(BaseCalculation):
         IsLmDecomposed = False
         KPoints = None
         Data = {}
-
+        if self.vasprunParser is None:
+            return {}
         child = self.vasprunParser.root.find("./calculation[last()]/projected/array")
         if child is None:
             return None
@@ -268,8 +271,6 @@ class BandStructure(BaseCalculation):
                 'LinearMagneticMoment': self.linearMagneticMoment,
             }
         }
-        doc['Files'] = [self.vasprunParser.vaspPath, self.file_parser['incar'].filename,
-                        self.file_parser['outcar'].filename, self.file_parser['kpoint'].filename,
-                        self.file_parser['oszicar'].filename]
+        doc['Files'] = [parser.filename for parser in self.file_parser.values()]
 
         return doc

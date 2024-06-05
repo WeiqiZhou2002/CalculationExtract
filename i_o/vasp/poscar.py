@@ -13,6 +13,7 @@ from public.tools.periodic_table import PTable
 from public.composition import Composition
 from public.lattice import Lattice
 from public.structure import Structure
+from public.sites import Atom,Site
 
 
 class Poscar:
@@ -28,13 +29,15 @@ class Poscar:
         self.volume = None
         self.numberOfSites = None
         self.structure = None
+        self.sites = None
 
     def setup(self):
         self.lattice = self.getLattice()
         self.composition = self.getComposition()
         self.volume = self.getVolume()
         self.numberOfSites = self.getNumberOfSites()
-        self.structure = Structure(lattice=self.lattice, composition=self.composition,sites=None)
+        self.sites = self.getSites()
+        self.structure = Structure(lattice=self.lattice, composition=self.composition,sites=self.sites)
         self.structure.setup()
 
 
@@ -72,3 +75,18 @@ class Poscar:
         counts = list(map(int, self.lines[6].split()))
         number_of_sites_from_counts = sum(counts)
         return number_of_sites_from_counts
+
+    def getSites(self):
+        coords_start_line = 8
+        sites = []
+        atom_index = 0
+        if self.lines[8].strip().lower() in ["direct", "cartesian"]:
+            coords_start_line += 1
+        for comp in self.composition:
+            atom = Atom(comp.atomic_symbol)
+            for _ in range(comp.amount):
+                coords = list(map(float, self.lines[coords_start_line + atom_index].split()[:3]))
+                site = Site(coords=coords, atom=atom)
+                sites.append(site)
+                atom_index += 1
+        return sites

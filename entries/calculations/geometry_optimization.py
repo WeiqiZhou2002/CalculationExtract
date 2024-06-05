@@ -22,6 +22,8 @@ class GeometryOptimization(BaseCalculation):
 
     def getIonicSteps(self):
         ionicsteps = {}
+        if self.vasprunParser is None:
+            return ionicsteps
         sites = self.vasprunParser.sites_final
         sites_new = []
         lattice = None
@@ -118,6 +120,13 @@ class GeometryOptimization(BaseCalculation):
                     能带能隙
                     :return
                 """
+        if self.vasprunParser is None:
+            return {
+                "GapFromBand": 'N/A',
+                "GapType": 'N/A',
+                "VBMFromBand": 'N/A',
+                "CBMFromBand": 'N/A'
+            }
         eigenval = self.vasprunParser.eigenValues
         if eigenval is None:
             eigenval = self.getEigenValues()
@@ -263,7 +272,6 @@ class GeometryOptimization(BaseCalculation):
         doc['Properties'] = {
             'GapFromGeo': self.getGapFromBand()  # TODO: gapFromGeo的计算方法和gapFromBand一样？
         }
-        doc['Files'] = [self.vasprunParser.vaspPath, self.file_parser['incar'].filename,
-                        self.file_parser['outcar'].filename]
+        doc['Files'] = [parser.filename for parser in self.file_parser.values()]
 
         return doc

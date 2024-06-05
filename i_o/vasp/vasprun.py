@@ -30,7 +30,7 @@ class Vasprun:
     def __init__(self, vaspPath):
         self.output_structure = None
         self.input_structure = None
-        self.vaspPath = vaspPath
+        self.filename = vaspPath
         tree = ET.parse(vaspPath)
         if tree is None:
             raise ValueError('File content error, not parse!')
@@ -176,7 +176,7 @@ class Vasprun:
         raise ValueError('无法判断提取类型，无法提取')
 
     def findKpointPath(self):
-        directory = os.path.dirname(self.vaspPath)
+        directory = os.path.dirname(self.filename)
         kPointPath = os.path.join(directory, 'KPOINTS')
         return kPointPath if os.path.exists(kPointPath) else None
 
@@ -392,7 +392,7 @@ class Vasprun:
         real_part = []
         imag = []
         real = []
-        for event, elem in ET.iterparse(self.vaspPath):
+        for event, elem in ET.iterparse(self.filename):
             tag = elem.tag
             if tag == "dielectricfunction":
                 imag = [[float(l) for l in r.text.split()] for r in

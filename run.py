@@ -23,7 +23,7 @@ def getArgument():
     # parser.add_argument('--root_dir', type=str, default=None, help='if data source is files, please input files root dir!')
     # parser.add_argument('--file_type', type=str, default=None, help='if data source is files, please input file type!')
     parser.add_argument('--source', default='vasp', help='data source: vasp, icsd, oqmd, materialproject, etc.')
-    parser.add_argument('--root_dir', default='', help='calculation files root path')
+    parser.add_argument('--root_dir', default='../TestData', help='calculation files root path')
     parser.add_argument('--log',action='store_true', default=False, help='if start log ')
     args = parser.parse_args()
     return args

@@ -24,6 +24,8 @@ class DielectricProperties(BaseCalculation):
         提取介电函数信息
         :return:
         """
+        if self.vasprunParser is None:
+            return {}
         data = self.vasprunParser.getDielectricData()
         energy = data['Energy']
         numOfEnergyPoints = len(energy)
@@ -168,8 +170,6 @@ class DielectricProperties(BaseCalculation):
             },
             'OpticalProperties': self.getOpticalProperties()
         }
-        doc['Files'] = [self.vasprunParser.vaspPath, self.file_parser['incar'].filename,
-                        self.file_parser['outcar'].filename,
-                        self.file_parser['oszicar'].filename]
+        doc['Files'] = [parser.filename for parser in self.file_parser.values()]
 
         return doc

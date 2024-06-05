@@ -40,8 +40,6 @@ class StaticCalculation(BaseCalculation):
                 'LinearMagneticMoment': self.linearMagneticMoment
             }
         }
-        doc['Files'] = [self.vasprunParser.vaspPath, self.file_parser['incar'].filename,
-                        self.file_parser['outcar'].filename, self.file_parser['kpoints'].filename,
-                        self.file_parser['oszicar'].filename]
+        doc['Files'] = [parser.filename for parser in self.file_parser.values()]
 
         return doc

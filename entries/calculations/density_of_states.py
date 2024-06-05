@@ -25,6 +25,8 @@ class DensityOfStates(BaseCalculation):
         提取总电子态密度数据
         @return: dict or None if no total
         """
+        if self.vasprunParser is None:
+            return {}
         child = self.vasprunParser.root.find("./calculation[last()]/dos/total/array/set")
         if child is None:
             return None
@@ -52,6 +54,8 @@ class DensityOfStates(BaseCalculation):
         分原子轨道态密度
         :return:
         """
+        if self.vasprunParser is None:
+            return {}
         child = self.vasprunParser.root.find("./calculation[last()]/dos/partial/array")
         if child is None:
             return None
@@ -104,6 +108,8 @@ class DensityOfStates(BaseCalculation):
             态密度能隙
             :return
         """
+        if self.vasprunParser is None:
+            return {}
         child = self.vasprunParser.root.find("./calculation[last()]/dos/i[@name='efermi']")
         efermi = float(child.text)
         tdos = self.getTotalDos()
@@ -225,7 +231,6 @@ class DensityOfStates(BaseCalculation):
                 'LinearMagneticMoment': self.linearMagneticMoment,
             }
         }
-        doc['Files'] = [self.vasprunParser.vaspPath, self.file_parser['incar'].filename,
-                        self.file_parser['outcar'].filename, self.file_parser['kpoints'].filename ]
+        doc['Files'] = [parser.filename for parser in self.file_parser.values()]
 
         return doc

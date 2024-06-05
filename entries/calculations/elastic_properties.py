@@ -20,7 +20,10 @@ class ElasticProperties(BaseCalculation):
 
     def getIonicSteps(self):
         ionicsteps = {}
-        sites = self.vasprunParser.sites_final
+        if self.vasprunParser is not None:
+            sites = self.vasprunParser.sites_final
+        else:
+            return ionicsteps
         sites_new = []
         lattice = None
         structures = []
@@ -119,7 +122,6 @@ class ElasticProperties(BaseCalculation):
         doc['Properties'] = {
             'ElasticProperties': self.outcarParser.getElasticProperties()
         }
-        doc['Files'] = [self.vasprunParser.vaspPath, self.file_parser['incar'].filename,
-                        self.file_parser['outcar'].filename]
+        doc['Files'] = [parser.filename for parser in self.file_parser.values()]
 
         return doc

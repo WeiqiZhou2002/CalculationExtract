@@ -21,6 +21,7 @@ class BaseCalculation(ABC):
         self.structure = None
         self.file_parser = file_parsers
         self.parm = None
+        self.vasprunParser = None
         if 'outcar' in file_parsers:
             self.outcarParser = file_parsers['outcar']
         else:
@@ -30,10 +31,13 @@ class BaseCalculation(ABC):
             self.vasprunParser.setup()
             self.input_structure = self.vasprunParser.input_structure
             self.output_structure = self.vasprunParser.output_structure
+            self.parm = self.vasprunParser.parameters
+            if 'incar' in file_parsers:
+                self.parm = file_parsers['incar'].fill_parameters(self.parm)
             self.basicDoc = {
                 'InputStructure': self.input_structure.to_bson(),
                 'OutputStructure': self.output_structure.to_bson(),
-                'Parameters': self.vasprunParser.parameters,
+                'Parameters': self.parm,
                 'Software': self.vasprunParser.software,
                 'StartTime': self.vasprunParser.startTime,
                 'ResourceUsage': self.vasprunParser.resourceUsage,
@@ -42,14 +46,16 @@ class BaseCalculation(ABC):
                 'Files': [],
                 'CalculationType': self.vasprunParser.calculationType
             }
-            self.parm=self.vasprunParser.parameters
-        elif 'poscar'in file_parsers and 'incar'in file_parsers:
-            poscarParser = file_parsers['poscar']
-            poscarParser.setup()
-            self.output_structure = poscarParser.structure
+            self.parm = self.vasprunParser.parameters
+        elif 'poscar' in file_parsers and 'incar' in file_parsers:
+            self.poscarParser = file_parsers['poscar']
+            self.poscarParser.setup()
+            self.parm = file_parsers['incar'].fill_parameters(self.parm)
+            self.output_structure = self.poscarParser.structure
             self.basicDoc = {
                 'InputStructure': {},
                 'OutputStructure': self.output_structure.to_bson(),
+                'Parameters': self.parm,
                 'ResourceUsage': self.outcarParser.getResourceUsage(),
                 'ProcessData': {},
                 'Properties': {},
@@ -58,16 +64,27 @@ class BaseCalculation(ABC):
             }
         else:
             raise ValueError("不可同时无vasprun或poscar和incar")
-        self.parm = file_parsers['incar'].fill_parameters(self.parm)
+
         if 'oszicar' in file_parsers:
             self.oszicarParser = file_parsers['oszicar']
         else:
             self.oszicarParser = None
+
     def getEigenValues(self):
         """
         提取本征值数据
         :return:
         """
+        if self.vasprunParser is None:
+            return {
+                "NumberOfGeneratedKPoints": 'N/A',
+                "NumberOfBand": 'N/A',
+                "IsSpinPolarized": 'N/A',
+                "KPoints": 'N/A',
+                "FermiEnergy": 'N/A',
+                "EigenvalData": 'N/A',
+                "EigenvalOcc": 'N/A'
+            }
         NumberOfGeneratedKPoints = 0
         NumberOfBand = 0
         IsSpinPolarized = False
@@ -112,6 +129,8 @@ class BaseCalculation(ABC):
 
     def getElectronicSteps(self):
         electronicSteps = []
+        if self.vasprunParser is None:
+            return electronicSteps
         for child in self.vasprunParser.root:
             if child.tag == 'calculation':
                 energys = []
@@ -156,6 +175,14 @@ class BaseCalculation(ABC):
         return electronicSteps
 
     def getThermoDynamicProperties(self):
+        if self.vasprunParser is None:
+            doc = {
+                'TotalEnergy': 'N/A',
+                'FermiEnergy': 'N/A',
+                'EnergyPerAtom': 'N/A',
+                'FormationEnergy': 'N/A'
+            }
+            return doc
         child = self.vasprunParser.root.find("./calculation[last()]/energy/i[@name='e_fr_energy']")
         totalenergy = float(child.text)
         child = self.vasprunParser.root.find("./calculation[last()]/dos/i[@name='efermi']")
@@ -181,7 +208,6 @@ class BaseCalculation(ABC):
             'FormationEnergy': formation_energy
         }
         return doc
-
 
     @abstractmethod
     def to_bson(self):

@@ -58,8 +58,8 @@ class Structure():
         self.hashId = None
 
     def setup(self):
-        if self.lattice is None or self.sites is None or self.composition is None:
-            raise ValueError('Lattice Sites Composition 都不能为空！')
+        if self.lattice is None or self.composition is None or self.sites is None:
+            raise ValueError('Lattice Composition Sites都不能为空！')
         self.formula = self.getFormula()
         self.simplestFormula = self.getSimplestFormula()
         self.numberOfElements = self.getNElements()
