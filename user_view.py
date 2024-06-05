@@ -15,19 +15,26 @@ import linecache
 
 from db.mongo.mongo_client import Mongo
 from entries.calculations import CalculateEntries
+from i_o.vasp.chgcar import Chgcar
+from i_o.vasp.eigenval import Eigenval
+from i_o.vasp.elfcar import Elfcar
 from i_o.vasp.incar import Incar
 from i_o.vasp.poscar import Poscar
 from i_o.vasp.kpoints import Kpoints
 from i_o.vasp.outcar import Outcar
 from i_o.vasp.oszicar import Oszicar
 from i_o.vasp.locpot import Locpot
+from i_o.vasp.procar import Procar
 from i_o.vasp.vasprun import Vasprun
 import os
 from tqdm import tqdm
 
+from i_o.vasp.wavecar import Wavecar
+from i_o.vasp.xdatcar import Xdatcar
 from public.calculation_type import CalType
 
-input_files = {'INCAR', 'KPOINTS', 'OSZICAR', 'OUTCAR', 'POSCAR', 'vasprun.xml'}
+input_files = {'INCAR', 'KPOINTS', 'OSZICAR', 'OUTCAR', 'POSCAR', 'vasprun.xml''XDATCAR', 'WAVECAR',
+               'PROCAR', 'ELFCAR', 'CHGCAR', 'EIGENVAL'}
 
 
 def vasp_extract(root_path: str, log):
@@ -106,12 +113,24 @@ def vasp_extract(root_path: str, log):
                 file_parsers['kpoints'] = Kpoints(full_path)
             elif file_name.upper() == 'OSZICAR':
                 file_parsers['oszicar'] = Oszicar(full_path)
+            elif file_name.upper() == 'XDATCAR':
+                file_parsers['xdatcar'] = Xdatcar(full_path)
+            elif file_name.upper() == 'WAVECAR':
+                file_parsers['wavecar'] = Wavecar(full_path)
+            elif file_name.upper() == 'PROCAR':
+                file_parsers['procar'] = Procar(full_path)
+            elif file_name.upper() == 'ELFCAR':
+                file_parsers['elfcar'] = Elfcar(full_path)
+            elif file_name.upper() == 'CHGCAR':
+                file_parsers['chgcar'] = Chgcar(full_path)
+            elif file_name.upper() == 'EIGENVAL':
+                file_parsers['eigenval'] = Eigenval(full_path)
         # 从名字或Incar 和 Vasprun对象中获取计算类型，优先名字
         cal_type = None
-        # cal_type = getCalType(file,collections)
+
         parm = {}
         if cal_type is None:
-            if  'vasprun' in file_parsers and 'incar' in file_parsers:
+            if 'vasprun' in file_parsers and 'incar' in file_parsers:
                 parm = file_parsers['vasprun'].parameters
                 parm = file_parsers['incar'].fill_parameters(parm)
             elif 'vasprun' in file_parsers:
@@ -120,8 +139,8 @@ def vasp_extract(root_path: str, log):
                 parm = file_parsers['incar'].fill_parameters(parm)
             else:
                 raise ValueError(
-                f"INCAR or vasprun.xml file is required to determine the calculation type in directory {file}")
-        cal_type=getCalType(file,collections,parm)
+                    f"INCAR or vasprun.xml file is required to determine the calculation type in directory {file}")
+        cal_type = getCalType(file, collections, parm)
         # 根据计算类型创建计算对象
         cal_entry = CalculateEntries[cal_type](file_parsers)
         bson = cal_entry.to_bson()
@@ -151,7 +170,8 @@ def findPaths(rootPath):
                     total_path.append(path)
     return total_path
 
-def getCalType(rootPath,collections,parm):
+
+def getCalType(rootPath, collections, parm):
     if len(collections) == 1:
         return collections[0]
     else:

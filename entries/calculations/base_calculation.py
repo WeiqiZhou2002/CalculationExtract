@@ -40,7 +40,7 @@ class BaseCalculation(ABC):
                 'Parameters': self.parm,
                 'Software': self.vasprunParser.software,
                 'StartTime': self.vasprunParser.startTime,
-                'ResourceUsage': self.vasprunParser.resourceUsage,
+                'ResourceUsage': self.outcarParser.getResourceUsage(),
                 'ProcessData': {},
                 'Properties': {},
                 'Files': [],
