@@ -1,0 +1,4 @@
+source: vasp
+root_dir: 'E:\Project\MatGGNN'
+log: True
+log_file: 'log.txt'

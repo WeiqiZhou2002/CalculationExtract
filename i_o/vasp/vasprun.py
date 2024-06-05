@@ -15,6 +15,7 @@ import numpy as np
 import linecache
 import os
 
+from public.tools.Electronic import Spin
 from public.tools.periodic_table import PTable
 from public.lattice import Lattice
 from public.sites import Site, Atom
@@ -411,3 +412,50 @@ class Vasprun:
             'imag_part': imag_part
         }
         return dielectricData
+
+    def getEigenValues(self):
+        """
+        提取本征值数据
+        :return:
+        """
+        NumberOfGeneratedKPoints = 0
+        NumberOfBand = 0
+        IsSpinPolarized = False
+        KPoints = None
+        EigenvalData = {}
+        EigenvalOcc = {}
+        child = self.root.find("./calculation[last()]/dos/i[@name='efermi']")
+        efermi = float(child.text)
+        child = self.root.find("./calculation[last()]/eigenvalues/array/set")
+        if child is None:
+            return None
+        KPoints = self.kPoints
+        NumberOfGeneratedKPoints = len(KPoints)
+        for s in child.findall('set'):
+            spin = Spin.up if s.attrib["comment"] == "spin 1" else Spin.down
+            data = []
+            occ = []
+            for k in s.findall("set"):
+                t = np.array(parseVarray(k))
+                data.append(list(t[:, 0]))
+                occ.append(list(t[:, 1]))
+            NumberOfBand = len(data[0])
+            # 按能带存储
+            EigenvalEnergyData = np.array(data).transpose()
+            EigenvalEnergyOcc = np.array(occ).transpose()
+
+            EigenvalData[spin] = EigenvalEnergyData.tolist()
+            EigenvalOcc[spin] = EigenvalEnergyOcc.tolist()
+
+            if spin == Spin.down:
+                IsSpinPolarized = True
+        # NumberOfBand = len(EigenvalData[Spin['up']][0])
+        return {
+            "NumberOfGeneratedKPoints": NumberOfGeneratedKPoints,
+            "NumberOfBand": NumberOfBand,
+            "IsSpinPolarized": IsSpinPolarized,
+            "KPoints": KPoints,
+            "FermiEnergy": efermi,
+            "EigenvalData": EigenvalData,
+            "EigenvalOcc": EigenvalOcc
+        }

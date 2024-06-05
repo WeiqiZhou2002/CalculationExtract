@@ -8,6 +8,27 @@
 @Date       : 2024/5/30 17:08 
 @Description: 
 """
+import argparse
+
+from user_view import vasp_extract
+
+
+def getArgument():
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument('--source', default='vasp', help='data source: vasp, icsd, oqmd, materialproject, etc.')
+    parser.add_argument('--root_dir', default='', help='calculation files root path')
+    parser.add_argument('--log',action='store_true', default=False, help='if start log ')
+    args = parser.parse_args()
+    return args
+
+
+if __name__ == '__main__':
+    args = getArgument()
+    if args.source == 'vasp':
+        vasp_extract(args.root_dir)
+    # 其他数据源 补充
+    # elif
+    # elif
 import json
 import os
 import time
