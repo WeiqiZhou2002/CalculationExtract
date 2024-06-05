@@ -98,7 +98,7 @@ class Eigenval:
             "NumberOfGeneratedKPoints": NumberOfGeneratedKPoints,
             "NumberOfBand": NumberOfBand,
             "IsSpinPolarized": IsSpinPolarized,
-            "KPoints": [self.kpoint.coords.tolist() for kpoint in KPoints],
+            "KPoints": [kpoint.coords.tolist() for kpoint in KPoints],
             "EigenvalData": EigenvalData,
             "EigenvalOcc": EigenvalOcc
         }
