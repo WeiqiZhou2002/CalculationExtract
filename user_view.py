@@ -115,8 +115,8 @@ def vasp_extract(root_path: str, log):
                 file_parsers['oszicar'] = Oszicar(full_path)
             elif file_name.upper() == 'XDATCAR':
                 file_parsers['xdatcar'] = Xdatcar(full_path)
-            elif file_name.upper() == 'WAVECAR':
-                file_parsers['wavecar'] = Wavecar(full_path)
+            # elif file_name.upper() == 'WAVECAR':
+            #    file_parsers['wavecar'] = Wavecar(full_path)
             elif file_name.upper() == 'PROCAR':
                 file_parsers['procar'] = Procar(full_path)
             elif file_name.upper() == 'ELFCAR':

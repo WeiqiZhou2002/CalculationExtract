@@ -26,6 +26,14 @@ class Eigenval:
         with open(self.filename, 'r') as f:
             self.lines = f.readlines()
 
+
+
+
+    def getEigenValues(self):
+        """
+        Extract eigenvalue data
+        :return:
+        """
         self.isSpin = int(self.lines[0].split()[3])
 
         # Get the number of k-points and bands
@@ -72,12 +80,6 @@ class Eigenval:
                     line_index += 1
 
         self.EigenValues = EigenValues(self.kpoints, self.eigenvalues)
-
-    def getEigenValues(self):
-        """
-        Extract eigenvalue data
-        :return:
-        """
         NumberOfGeneratedKPoints = len(self.kpoints)
         NumberOfBand = self.nBands
         IsSpinPolarized = (self.isSpin != 1)

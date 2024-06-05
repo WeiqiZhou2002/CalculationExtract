@@ -30,6 +30,8 @@ class BandStructure(BaseCalculation):
                 """
         if self.vasprunParser is not None:
             eigenval = self.vasprunParser.getEigenValues()
+        elif 'eigenval' in self.file_parser:
+            eigenval = self.file_parser['eigenval'].getEigenValues()
         else:
             return {}
         isSpin = eigenval["IsSpinPolarized"]
@@ -261,7 +263,7 @@ class BandStructure(BaseCalculation):
             "ThermodynamicProperties": self.getThermoDynamicProperties(),
             "ElectronicProperties": {
                 'AtomicCharge': self.atomicCharge,
-                'EigenValues': self.getEigenValues(),
+                'EigenValues': self.file_parser['eigenval'].getEigenValues(),
                 'ProjectedEigenVal_on_IonOrbitals': self.getProjectedEigenvalOnIonOrbitals(),
                 'GapFromBand': self.getGapFromBand()
             },

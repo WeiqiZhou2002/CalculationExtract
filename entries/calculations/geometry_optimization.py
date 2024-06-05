@@ -120,16 +120,12 @@ class GeometryOptimization(BaseCalculation):
                     能带能隙
                     :return
                 """
-        if self.vasprunParser is None:
-            return {
-                "GapFromBand": 'N/A',
-                "GapType": 'N/A',
-                "VBMFromBand": 'N/A',
-                "CBMFromBand": 'N/A'
-            }
-        eigenval = self.vasprunParser.eigenValues
-        if eigenval is None:
-            eigenval = self.getEigenValues()
+        if self.vasprunParser is not None:
+            eigenval = self.vasprunParser.getEigenValues()
+        elif 'eigenval' in self.file_parser:
+            eigenval = self.file_parser['eigenval'].getEigenValues()
+        else:
+            return {}
         isSpin = eigenval["IsSpinPolarized"]
         number = eigenval["NumberOfGeneratedKPoints"]
         BandsNum = eigenval["NumberOfBand"]
