@@ -9,31 +9,23 @@
 @Description: 
 """
 import sys
-import time
-import linecache
+from datetime import time
 
 from db.mongo.mongo_client import Mongo
 from entries.calculations import CalculateEntries
-from i_o.vasp.chgcar import Chgcar
-from i_o.vasp.eigenval import Eigenval
-from i_o.vasp.elfcar import Elfcar
-from i_o.vasp.incar import Incar
-from i_o.vasp.poscar import Poscar
-from i_o.vasp.kpoints import Kpoints
-from i_o.vasp.outcar import Outcar
-from i_o.vasp.oszicar import Oszicar
-from i_o.vasp.locpot import Locpot
-from i_o.vasp.procar import Procar
-from i_o.vasp.vasprun import Vasprun
+from io.vasp.incar import Incar
+from io.vasp.poscar import Poscar
+from io.vasp.kpoints import Kpoints
+from io.vasp.outcar import Outcar
+from io.vasp.oszicar import Oszicar
+from io.vasp.locpot import Locpot
+from io.vasp.vasprun import Vasprun
 import os
 from tqdm import tqdm
 
-from i_o.vasp.wavecar import Wavecar
-from i_o.vasp.xdatcar import Xdatcar
 from public.calculation_type import CalType
 
-input_files = {'INCAR', 'KPOINTS', 'OSZICAR', 'OUTCAR', 'POSCAR', 'vasprun.xml''XDATCAR', 'WAVECAR',
-               'PROCAR', 'ELFCAR', 'CHGCAR', 'EIGENVAL'}
+input_files = {'INCAR', 'KPOINT', 'OSZICAR', 'OUTCAR', 'POSCAR', 'vasprun.xml'}
 
 
 def vasp_extract(root_path: str, log):
@@ -93,7 +85,6 @@ def vasp_extract(root_path: str, log):
         # 遍历文件夹，获取所有的vasp计算文件
         # 根据文件名创建 解析类，对文件进行解析
         # 保存在字典格式中 {'incar': Incar(), 'poscar': Poscar(), 'outcar': Outcar(), 'locpot': Locpot()}
-
         file_parsers = {}
         # 遍历目录中所有文件
         for file_name in os.listdir(file):
@@ -108,43 +99,26 @@ def vasp_extract(root_path: str, log):
                 file_parsers['locpot'] = Locpot(full_path)
             elif file_name.lower() == 'vasprun.xml':
                 file_parsers['vasprun'] = Vasprun(full_path)
-            elif file_name.upper() == 'KPOINTS':
+            elif file_name.upper() == 'KPOINT':
                 file_parsers['kpoints'] = Kpoints(full_path)
             elif file_name.upper() == 'OSZICAR':
                 file_parsers['oszicar'] = Oszicar(full_path)
-            elif file_name.upper() == 'XDATCAR':
-                file_parsers['xdatcar'] = Xdatcar(full_path)
-            elif file_name.upper() == 'WAVECAR':
-                file_parsers['wavecar'] = Wavecar(full_path)
-            elif file_name.upper() == 'PROCAR':
-                file_parsers['procar'] = Procar(full_path)
-            elif file_name.upper() == 'ELFCAR':
-                file_parsers['elfcar'] = Elfcar(full_path)
-            elif file_name.upper() == 'CHGCAR':
-                file_parsers['chgcar'] = Chgcar(full_path)
-            elif file_name.upper() == 'EIGENVAL':
-                file_parsers['eigenval'] = Eigenval(full_path)
-        # 从名字或Incar 和 Vasprun对象中获取计算类型，优先名字
-        parm = {}
-        if 'vasprun' in file_parsers and 'incar' in file_parsers:
-            parm = file_parsers['vasprun'].parameters
-            parm = file_parsers['incar'].fill_parameters(parm)
-        elif 'vasprun' in file_parsers:
-            parm = file_parsers['vasprun'].parameters
+        # 从Incar  或 Vasprun对象中获取计算类型，优先vasprun
+        if 'vasprun' in file_parsers:
+            cal_type = file_parsers['vasprun'].getCalType()
         elif 'incar' in file_parsers:
-            parm = file_parsers['incar'].fill_parameters(parm)
+            cal_type = file_parsers['incar'].getCalType()
         else:
             raise ValueError(
                 f"INCAR or vasprun.xml file is required to determine the calculation type in directory {file}")
-        cal_type = getCalType(file, collections, parm)
+
         # 根据计算类型创建计算对象
         cal_entry = CalculateEntries[cal_type](file_parsers)
         bson = cal_entry.to_bson()
         # 保存到数据库
-        mongo = Mongo(host=host, port=port, db=database, collection=cal_type)
+        mongo = Mongo(host=host,port=port,db=database,collection=collections)
         # to_mongo
         mongo.save_one(bson)
-        outFile.close()
 
 
 def findPaths(rootPath):
@@ -164,47 +138,3 @@ def findPaths(rootPath):
                 for path in paths:
                     total_path.append(path)
     return total_path
-
-
-def getCalType(rootPath, collections, parm):
-    if len(collections) == 1:
-        return collections[0]
-    else:
-        name = rootPath.lower()
-        if 'static' in name:
-            return CalType.StaticCalculation
-        elif 'dos' in name or 'density' in name:
-            return CalType.DensityOfStates
-        elif 'geometry' in name or 'scf' in name or 'optim' in name:
-            return CalType.GeometryOptimization
-        elif 'band' in name:
-            return CalType.BandStructure
-        elif 'elastic' in name:
-            return CalType.ElasticProperties
-        elif 'dielectric' in name:
-            return CalType.DielectricProperties
-
-    para_list = ['IBRION', 'LORBIT', 'LOPTICS', 'LEPSILON', 'LCALCEPS', 'ISIF', 'MAGMOM']
-    parameters = {key: parm.get(key, None) for key in para_list}
-    if parameters['IBRION'] == 1 or parameters['IBRION'] == 2 or parameters['IBRION'] == 3:
-        return CalType.GeometryOptimization
-    if parameters['IBRION'] == -1 and linecache.getline(os.path.join(rootPath, 'KPOINTS'), 3).lower().startswith(
-            'l'):  # kpoints generation para
-        return CalType.BandStructure
-    if ('LOPTICS' in parameters.keys() and parameters['LOPTICS']) or parameters['IBRION'] == 7 or parameters[
-        'IBRION'] == 8 \
-            or (parameters['IBRION'] == 5 and (('LEPSILON' in parameters.keys() and parameters['LEPSILON']) or (
-            'LCALCEPS' in parameters.keys() and parameters['LCALCEPS']))) \
-            or (parameters['IBRION'] == 6 and (('LEPSILON' in parameters.keys() and parameters['LEPSILON']) or (
-            'LCALCEPS' in parameters.keys() and parameters['LCALCEPS']))):
-        return CalType.DielectricProperties
-    if parameters['IBRION'] == -1 and parameters['LORBIT']:
-        return CalType.DensityOfStates
-    if parameters['IBRION'] == -1:
-        return CalType.StaticCalculation
-    if (parameters['IBRION'] == 5 or parameters['IBRION'] == 6) and parameters['ISIF'] >= 3:
-        return CalType.ElasticProperties
-
-    if 'MAGMOM' in parameters.keys():
-        return CalType.MagneticProperties
-    raise ValueError('无法判断提取类型，无法提取')
