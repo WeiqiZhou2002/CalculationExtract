@@ -10,7 +10,6 @@
 """
 import sys
 import time
-import json
 import linecache
 
 from db.mongo.mongo_client import Mongo
@@ -126,20 +125,17 @@ def vasp_extract(root_path: str, log):
             elif file_name.upper() == 'EIGENVAL':
                 file_parsers['eigenval'] = Eigenval(full_path)
         # 从名字或Incar 和 Vasprun对象中获取计算类型，优先名字
-        cal_type = None
-
         parm = {}
-        if cal_type is None:
-            if 'vasprun' in file_parsers and 'incar' in file_parsers:
-                parm = file_parsers['vasprun'].parameters
-                parm = file_parsers['incar'].fill_parameters(parm)
-            elif 'vasprun' in file_parsers:
-                parm = file_parsers['vasprun'].parameters
-            elif 'incar' in file_parsers:
-                parm = file_parsers['incar'].fill_parameters(parm)
-            else:
-                raise ValueError(
-                    f"INCAR or vasprun.xml file is required to determine the calculation type in directory {file}")
+        if 'vasprun' in file_parsers and 'incar' in file_parsers:
+            parm = file_parsers['vasprun'].parameters
+            parm = file_parsers['incar'].fill_parameters(parm)
+        elif 'vasprun' in file_parsers:
+            parm = file_parsers['vasprun'].parameters
+        elif 'incar' in file_parsers:
+            parm = file_parsers['incar'].fill_parameters(parm)
+        else:
+            raise ValueError(
+                f"INCAR or vasprun.xml file is required to determine the calculation type in directory {file}")
         cal_type = getCalType(file, collections, parm)
         # 根据计算类型创建计算对象
         cal_entry = CalculateEntries[cal_type](file_parsers)
@@ -148,8 +144,7 @@ def vasp_extract(root_path: str, log):
         mongo = Mongo(host=host, port=port, db=database, collection=cal_type)
         # to_mongo
         mongo.save_one(bson)
-
-    outFile.close()
+        outFile.close()
 
 
 def findPaths(rootPath):

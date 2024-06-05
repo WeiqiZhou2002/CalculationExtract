@@ -51,10 +51,10 @@ class BaseCalculation(ABC):
             self.poscarParser = file_parsers['poscar']
             self.poscarParser.setup()
             self.parm = file_parsers['incar'].fill_parameters(self.parm)
-            self.output_structure = self.poscarParser.structure
+            self.input_structure = self.poscarParser.structure
             self.basicDoc = {
-                'InputStructure': {},
-                'OutputStructure': self.output_structure.to_bson(),
+                'InputStructure': self.input_structure,
+                'OutputStructure': {},
                 'Parameters': self.parm,
                 'ResourceUsage': self.outcarParser.getResourceUsage(),
                 'ProcessData': {},
