@@ -39,71 +39,86 @@ class Doscar:
         return {
             "IsSpinPolarized": IsSpinPolarized,
             "NumberOfGridPoints": self.N,
-            "Energies": self.energies,
-            "TdosData": self.total
+            "Energies": self.energies.tolist(),
+            "TdosData": self.total.tolist()
         }
 
-    def getPatialDos(self):
+    def getPartialDos(self):
         projected = None
         IsSpinPolarized = False
         IsLmProjected = False
         line_index = 6 + self.N
         DecomposedLength = 0
+        orbitals = []
+        PartialDosData = []
         for i in range(self.NIon):
             line_index += 1
+            fields = np.array(self.lines[line_index].split(), dtype=float)
+            if len(fields) == 4:  # spd
+                IsSpinPolarized = False
+                IsLmProjected = False
+                orbitals = ['s', 'p', 'd']
+                projected = {orb: [] for orb in orbitals}
+            elif len(fields) == 5:  # spdf
+                IsSpinPolarized = False
+                IsLmProjected = False
+                orbitals = ['s', 'p', 'd', 'f']
+                projected = {orb: [] for orb in orbitals}
+            elif len(fields) == 7:  # spd with spin polarization
+                IsSpinPolarized = True
+                IsLmProjected = False
+                orbitals = ['s', 'p', 'd']
+                projected = {orb: {'up': [], 'down': []} for orb in orbitals}
+            elif len(fields) == 9:  # spdf with spin polarization
+                IsSpinPolarized = True
+                IsLmProjected = False
+                orbitals = ['s', 'p', 'd', 'f']
+                projected = {orb: {'up': [], 'down': []} for orb in orbitals}
+            elif len(fields) == 10:  # partial orbital of spd without spin
+                IsSpinPolarized = False
+                IsLmProjected = True
+                orbitals = ['s', 'py', 'pz', 'px', 'dxy', 'dyz', 'dz2', 'dxz', 'dx2-y2']
+                projected = {orb: [] for orb in orbitals}
+            elif len(fields) == 17:  # partial orbitals of spdf without spin
+                IsSpinPolarized = False
+                IsLmProjected = True
+                orbitals = ['s', 'py', 'pz', 'px', 'dxy', 'dyz', 'dz2', 'dxz', 'dx2-y2', 'fy(3x2-y2)', 'fxyz',
+                            'fyz2', 'fz3', 'fxz2', 'fz(x2-y2)', 'fx(x2-3y2)']
+                projected = {orb: [] for orb in orbitals}
+            elif len(fields) == 19:  # partial orbital of spd with spin
+                IsSpinPolarized = True
+                IsLmProjected = True
+                orbitals = ['s', 'py', 'pz', 'px', 'dxy', 'dyz', 'dz2', 'dxz', 'dx2-y2']
+                projected = {orb: {'up': [], 'down': []} for orb in orbitals}
+            else:  # partial orbitals of spdf with spin
+                IsSpinPolarized = True
+                IsLmProjected = True
+                orbitals = ['s', 'py', 'pz', 'px', 'dxy', 'dyz', 'dz2', 'dxz', 'dx2-y2', 'fy(3x2-y2)', 'fxyz',
+                            'fyz2', 'fz3', 'fxz2', 'fz(x2-y2)', 'fx(x2-3y2)']
+                projected = {orb: {'up': [], 'down': []} for orb in orbitals}
             for j in range(self.N):
                 fields = np.array(self.lines[line_index].split(), dtype=float)
                 line_index += 1
                 DecomposedLength = len(fields) - 1
-                if i == 0 and j == 0:
-                    if len(fields) == 4:  # spd
-                        IsSpinPolarized = False
-                        IsLmProjected = False
-                        projected = np.zeros((self.NIon, 3, 1, self.N))
-                    elif len(fields) == 5:  # spdf
-                        IsSpinPolarized = False
-                        IsLmProjected = False
-                        projected = np.zeros((self.NIon, 4, 1, self.N))
-                    elif len(fields) == 7:  # spd with spin polarization
-                        IsSpinPolarized = True
-                        IsLmProjected = False
-                        projected = np.zeros((self.NIon, 3, 2, self.N))
-                    elif len(fields) == 9:  # spdf with spin polarization
-                        IsSpinPolarized = True
-                        IsLmProjected = False
-                        projected = np.zeros((self.NIon, 4, 2, self.N))
-                    elif len(fields) == 10:  # partial orbital of spd without spin
-                        IsSpinPolarized = False
-                        IsLmProjected = True
-                        projected = np.zeros((self.NIon, 9, 1, self.N))
-                    elif len(fields) == 17:  # partial orbitals of spdf without spin
-                        IsSpinPolarized = False
-                        IsLmProjected = True
-                        projected = np.zeros((self.NIon, 16, 1, self.N))
-                    elif len(fields) == 19:  # partial orbital of spd with spin
-                        IsSpinPolarized = True
-                        IsLmProjected = True
-                        projected = np.zeros((self.NIon, 9, 2, self.N))
-                    else:  # partial orbitals of spdf with spin
-                        IsSpinPolarized = True
-                        IsLmProjected = True
-                        projected = np.zeros((self.NIon, 16, 2, self.N))
                 if IsLmProjected:
                     if IsSpinPolarized:
-                        for k in range(16 if len(fields) > 19 else 9):
-                            projected[i, k, 0, j] = fields[1 + k * 2]
-                            projected[i, k, 1, j] = fields[2 + k * 2]
+                        DecomposedLength = DecomposedLength / 2
+                        for k, orb in enumerate(orbitals):
+                            projected[orb]['up'].append(fields[1 + k * 2])
+                            projected[orb]['down'].append(fields[2 + k * 2])
                     else:
-                        for k in range(16 if len(fields) > 10 else 9):
-                            projected[i, k, 0, j] = fields[1 + k]
+                        for k, orb in enumerate(orbitals):
+                            projected[orb].append(fields[1 + k])
                 else:
                     if IsSpinPolarized:
-                        for k in range(4 if len(fields) > 7 else 3):
-                            projected[i, k, 0, j] = fields[1 + k * 2]
-                            projected[i, k, 1, j] = fields[2 + k * 2]
+                        DecomposedLength = DecomposedLength / 2
+                        for k, orb in enumerate(orbitals):
+                            projected[orb]['up'].append(fields[1 + k * 2])
+                            projected[orb]['down'].append(fields[2 + k * 2])
                     else:
-                        for k in range(4 if len(fields) > 4 else 3):
-                            projected[i, k, 0, j] = fields[1 + k]
+                        for k, orb in enumerate(orbitals):
+                            projected[orb].append(fields[1 + k])
+            PartialDosData.append(projected)
 
         return {
             "IsSpinPolarized": IsSpinPolarized,
@@ -111,6 +126,6 @@ class Doscar:
             "NumberOfIons": self.NIon,
             "DecomposedLength": DecomposedLength,
             "IsLmDecomposed": IsLmProjected,
-            "Energies": self.energies,
-            "PartialDosData": projected
+            "Energies": self.energies.tolist(),
+            "PartialDosData": PartialDosData
         }

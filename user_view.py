@@ -142,7 +142,7 @@ def vasp_extract(root_path: str, log):
         cal_entry = CalculateEntries[cal_type](file_parsers)
         bson = cal_entry.to_bson()
         # 保存到数据库
-        mongo.save_one(bson, database, cal_type)
+        id = mongo.save_one(bson, database, cal_type)
 
     mongo.close()
     outFile.close()

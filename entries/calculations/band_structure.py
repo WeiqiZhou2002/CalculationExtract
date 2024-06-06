@@ -30,8 +30,8 @@ class BandStructure(BaseCalculation):
                 """
         if self.vasprunParser is not None:
             eigenval = self.vasprunParser.getEigenValues()
-        elif 'eigenval' in self.file_parser:
-            eigenval = self.file_parser['eigenval'].getEigenValues()
+        # elif 'eigenval' in self.file_parser:
+        #    eigenval = self.file_parser['eigenval'].getEigenValues()
         else:
             return {}
         isSpin = eigenval["IsSpinPolarized"]
@@ -39,7 +39,7 @@ class BandStructure(BaseCalculation):
         BandsNum = eigenval["NumberOfBand"]
         Energies = eigenval["EigenvalData"]
         Kpoints = eigenval["KPoints"]
-        efermi = eigenval["FermiEnergy"]
+        efermi = eigenval.get('FermiEnergy',None)
         energies = []
         kpoints = []
         for t in Energies.values():
