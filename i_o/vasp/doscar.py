@@ -44,15 +44,73 @@ class Doscar:
         }
 
     def getPatialDos(self):
+        projected = None
         IsSpinPolarized = False
+        IsLmProjected = False
         line_index = 6 + self.N
+        DecomposedLength = 0
+        for i in range(self.NIon):
+            line_index += 1
+            for j in range(self.N):
+                fields = np.array(self.lines[line_index].split(), dtype=float)
+                line_index += 1
+                DecomposedLength = len(fields) - 1
+                if i == 0 and j == 0:
+                    if len(fields) == 4:  # spd
+                        IsSpinPolarized = False
+                        IsLmProjected = False
+                        projected = np.zeros((self.NIon, 3, 1, self.N))
+                    elif len(fields) == 5:  # spdf
+                        IsSpinPolarized = False
+                        IsLmProjected = False
+                        projected = np.zeros((self.NIon, 4, 1, self.N))
+                    elif len(fields) == 7:  # spd with spin polarization
+                        IsSpinPolarized = True
+                        IsLmProjected = False
+                        projected = np.zeros((self.NIon, 3, 2, self.N))
+                    elif len(fields) == 9:  # spdf with spin polarization
+                        IsSpinPolarized = True
+                        IsLmProjected = False
+                        projected = np.zeros((self.NIon, 4, 2, self.N))
+                    elif len(fields) == 10:  # partial orbital of spd without spin
+                        IsSpinPolarized = False
+                        IsLmProjected = True
+                        projected = np.zeros((self.NIon, 9, 1, self.N))
+                    elif len(fields) == 17:  # partial orbitals of spdf without spin
+                        IsSpinPolarized = False
+                        IsLmProjected = True
+                        projected = np.zeros((self.NIon, 16, 1, self.N))
+                    elif len(fields) == 19:  # partial orbital of spd with spin
+                        IsSpinPolarized = True
+                        IsLmProjected = True
+                        projected = np.zeros((self.NIon, 9, 2, self.N))
+                    else:  # partial orbitals of spdf with spin
+                        IsSpinPolarized = True
+                        IsLmProjected = True
+                        projected = np.zeros((self.NIon, 16, 2, self.N))
+                if IsLmProjected:
+                    if IsSpinPolarized:
+                        for k in range(16 if len(fields) > 19 else 9):
+                            projected[i, k, 0, j] = fields[1 + k * 2]
+                            projected[i, k, 1, j] = fields[2 + k * 2]
+                    else:
+                        for k in range(16 if len(fields) > 10 else 9):
+                            projected[i, k, 0, j] = fields[1 + k]
+                else:
+                    if IsSpinPolarized:
+                        for k in range(4 if len(fields) > 7 else 3):
+                            projected[i, k, 0, j] = fields[1 + k * 2]
+                            projected[i, k, 1, j] = fields[2 + k * 2]
+                    else:
+                        for k in range(4 if len(fields) > 4 else 3):
+                            projected[i, k, 0, j] = fields[1 + k]
 
         return {
             "IsSpinPolarized": IsSpinPolarized,
             "NumberOfGridPoints": self.N,
             "NumberOfIons": self.NIon,
             "DecomposedLength": DecomposedLength,
-            "IsLmDecomposed": IsLmDecomposed,
-            "Energies": Energies,
-            "PartialDosData": PartialDosData
+            "IsLmDecomposed": IsLmProjected,
+            "Energies": self.energies,
+            "PartialDosData": projected
         }
