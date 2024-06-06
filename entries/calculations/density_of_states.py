@@ -21,87 +21,22 @@ class DensityOfStates(BaseCalculation):
         super().__init__(file_parsers)
 
     def getTotalDos(self):
-        """
-        提取总电子态密度数据
-        @return: dict or None if no total
-        """
-        if self.vasprunParser is None:
+        if self.vasprunParser is not None:
+            return self.vasprunParser.getTotalDos()
+        elif 'doscar' in self.file_parser:
+            return self.file_parser['doscar'].getTotalDos()
+        else:
             return {}
-        child = self.vasprunParser.root.find("./calculation[last()]/dos/total/array/set")
-        if child is None:
-            return None
-        IsSpinPolarized = False
-        NumberOfGridPoints = 0
-        Energies = list()
-        TdosData = {}
-        for s in child.findall("set"):
-            spin = Spin.up if s.attrib["comment"] == "spin 1" else Spin.down
-            data = np.array(parseVarray(s))
-            Energies = list(data[:, 0])
-            TdosData[spin] = list(data[:, 1])
-            NumberOfGridPoints = len(data[:, 0])
-            if spin == Spin.down:
-                IsSpinPolarized = True
-        return {
-            "IsSpinPolarized": IsSpinPolarized,
-            "NumberOfGridPoints": NumberOfGridPoints,
-            "Energies": Energies,
-            "TdosData": TdosData
-        }
 
     def getPartialDos(self):
-        """
-        分原子轨道态密度
-        :return:
-        """
-        if self.vasprunParser is None:
+        if self.vasprunParser is not None:
+            return self.vasprunParser.getPatialDos()
+        elif 'doscar' in self.file_parser:
+            return self.file_parser['doscar'].getPartialDos()
+        else:
             return {}
-        child = self.vasprunParser.root.find("./calculation[last()]/dos/partial/array")
-        if child is None:
-            return None
-        IsSpinPolarized = False
-        NumberOfGridPoints = 301
-        NumberOfIons = 0  #
-        DecomposedLength = 0  # 分波态密度的投影数
-        IsLmDecomposed = False  # 是否计算了轨道投影
-        Energies = {}
-        PartialDosData = []
-        LDecomposed = []
-        for filed in child.findall("field"):
-            if "energy" not in filed.text.strip():
-                LDecomposed.append(filed.text.strip())
-        DecomposedLength = len(LDecomposed)
-        IsLmDecomposed = True if DecomposedLength == 9 or DecomposedLength == 16 else False
-        irons = child.find("set").findall("set")
-        NumberOfIons = len(irons)
 
-        for iron in irons:
-            energiesOfIron = []
-            dosOfIron = {}
-            for s in iron.findall("set"):
-                spin = Spin.up if s.attrib["comment"] == "spin 1" else Spin.down
-                data = np.array(parseVarray(s))
-                energiesOfIron = list(data[:, 0])
-                if spin not in Energies:
-                    Energies[spin] = energiesOfIron
-                NumberOfGridPoints = len(data[:, 0])
-                for i in range(0, DecomposedLength):
-                    if LDecomposed[i] not in dosOfIron:
-                        dosOfIron[LDecomposed[i]] = {}
-                    dosOfIron[LDecomposed[i]][spin] = list(data[:, i + 1])
-                if spin == Spin.down:
-                    IsSpinPolarized = True
-            PartialDosData.append(dosOfIron)
 
-        return {
-            "IsSpinPolarized": IsSpinPolarized,
-            "NumberOfGridPoints": NumberOfGridPoints,
-            "NumberOfIons": NumberOfIons,
-            "DecomposedLength": DecomposedLength,
-            "IsLmDecomposed": IsLmDecomposed,
-            "Energies": Energies,
-            "PartialDosData": PartialDosData
-        }
 
     def getGapFromDos(self, energies=None):
         """

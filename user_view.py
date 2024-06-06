@@ -15,6 +15,7 @@ import linecache
 from db.mongo.mongo_client import Mongo
 from entries.calculations import CalculateEntries
 from i_o.vasp.chgcar import Chgcar
+from i_o.vasp.doscar import Doscar
 from i_o.vasp.eigenval import Eigenval
 from i_o.vasp.elfcar import Elfcar
 from i_o.vasp.incar import Incar
@@ -28,11 +29,10 @@ from i_o.vasp.vasprun import Vasprun
 import os
 from tqdm import tqdm
 
-from i_o.vasp.wavecar import Wavecar
 from i_o.vasp.xdatcar import Xdatcar
 from public.calculation_type import CalType
 
-input_files = {'INCAR', 'KPOINTS', 'OSZICAR', 'OUTCAR', 'POSCAR', 'vasprun.xml''XDATCAR', 'WAVECAR',
+input_files = {'INCAR', 'KPOINTS', 'OSZICAR', 'OUTCAR', 'POSCAR', 'vasprun.xml''XDATCAR', 'DOSCAR',
                'PROCAR', 'ELFCAR', 'CHGCAR', 'EIGENVAL'}
 
 
@@ -115,8 +115,8 @@ def vasp_extract(root_path: str, log):
                 file_parsers['oszicar'] = Oszicar(full_path)
             elif file_name.upper() == 'XDATCAR':
                 file_parsers['xdatcar'] = Xdatcar(full_path)
-            # elif file_name.upper() == 'WAVECAR':
-            #    file_parsers['wavecar'] = Wavecar(full_path)
+            elif file_name.upper() == 'DOSCAR':
+                file_parsers['doscar'] = Doscar(full_path)
             elif file_name.upper() == 'PROCAR':
                 file_parsers['procar'] = Procar(full_path)
             elif file_name.upper() == 'ELFCAR':
