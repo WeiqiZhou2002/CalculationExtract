@@ -10,7 +10,7 @@
 """
 import re
 import numpy as np
-import bson
+
 
 class Chgcar:
     def __init__(self, filename):
