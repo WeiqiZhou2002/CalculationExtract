@@ -38,7 +38,8 @@ class StaticCalculation(BaseCalculation):
             'MagneticProperties': {
                 'AtomicMagnetization': self.atomicMagnetization,
                 'LinearMagneticMoment': self.linearMagneticMoment
-            }
+            },
+            'ChgcarInfo': self.file_parser['chgcar'].getChgcarInfo()
         }
         doc['Files'] = [parser.filename for parser in self.file_parser.values()]
 
