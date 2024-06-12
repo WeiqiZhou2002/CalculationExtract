@@ -264,6 +264,7 @@ class BandStructure(BaseCalculation):
             "ElectronicProperties": {
                 'AtomicCharge': self.atomicCharge,
                 'EigenValues': self.file_parser['eigenval'].getEigenValues(),
+                'test': self.file_parser['procar'].getEigenValues(),
                 'ProjectedEigenVal_on_IonOrbitals': self.getProjectedEigenvalOnIonOrbitals(),
                 'GapFromBand': self.getGapFromBand()
             },

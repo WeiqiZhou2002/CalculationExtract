@@ -142,7 +142,11 @@ def vasp_extract(root_path: str, log):
         cal_entry = CalculateEntries[cal_type](file_parsers)
         bson = cal_entry.to_bson()
         # 保存到数据库
-        id = mongo.save_one(bson, database, cal_type)
+        size = get_deep_size(bson)
+        if size < 16793598:
+            id = mongo.save_one(bson, database, cal_type)
+        # else:
+        #     id = mongo.save_large(bson, database, cal_type)
 
     mongo.close()
     outFile.close()
@@ -167,45 +171,63 @@ def findPaths(rootPath):
     return total_path
 
 
+def get_deep_size(obj, seen=None):
+    """Recursively finds the total size of an object including its nested objects."""
+    if seen is None:
+        seen = set()
+    obj_id = id(obj)
+    if obj_id in seen:
+        return 0
+    seen.add(obj_id)
+    size = sys.getsizeof(obj)
+    if isinstance(obj, dict):
+        size += sum([get_deep_size(v, seen) for v in obj.values()])
+        size += sum([get_deep_size(k, seen) for k in obj.keys()])
+    elif hasattr(obj, '__dict__'):
+        size += get_deep_size(obj.__dict__, seen)
+    elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
+        size += sum([get_deep_size(i, seen) for i in obj])
+    return size
+
 # def getCalType(rootPath, collections, parm):
-    # if len(collections) == 1:
-    #     return collections[0]
-    # else:
-    #     name = rootPath.lower()
-    #     if 'static' in name:
-    #         return CalType.StaticCalculation
-    #     elif 'dos' in name or 'density' in name:
-    #         return CalType.DensityOfStates
-    #     elif 'geometry' in name or 'scf' in name or 'optim' in name:
-    #         return CalType.GeometryOptimization
-    #     elif 'band' in name:
-    #         return CalType.BandStructure
-    #     elif 'elastic' in name:
-    #         return CalType.ElasticProperties
-    #     elif 'dielectric' in name:
-    #         return CalType.DielectricProperties
-    #
-    # para_list = ['IBRION', 'LORBIT', 'LOPTICS', 'LEPSILON', 'LCALCEPS', 'ISIF', 'MAGMOM']
-    # parameters = {key: parm.get(key, None) for key in para_list}
-    # if parameters['IBRION'] == 1 or parameters['IBRION'] == 2 or parameters['IBRION'] == 3:
-    #     return CalType.GeometryOptimization
-    # if parameters['IBRION'] == -1 and linecache.getline(os.path.join(rootPath, 'KPOINTS'), 3).lower().startswith(
-    #         'l'):  # kpoints generation para
-    #     return CalType.BandStructure
-    # if ('LOPTICS' in parameters.keys() and parameters['LOPTICS']) or parameters['IBRION'] == 7 or parameters[
-    #     'IBRION'] == 8 \
-    #         or (parameters['IBRION'] == 5 and (('LEPSILON' in parameters.keys() and parameters['LEPSILON']) or (
-    #         'LCALCEPS' in parameters.keys() and parameters['LCALCEPS']))) \
-    #         or (parameters['IBRION'] == 6 and (('LEPSILON' in parameters.keys() and parameters['LEPSILON']) or (
-    #         'LCALCEPS' in parameters.keys() and parameters['LCALCEPS']))):
-    #     return CalType.DielectricProperties
-    # if parameters['IBRION'] == -1 and parameters['LORBIT']:
-    #     return CalType.DensityOfStates
-    # if parameters['IBRION'] == -1:
-    #     return CalType.StaticCalculation
-    # if (parameters['IBRION'] == 5 or parameters['IBRION'] == 6) and parameters['ISIF'] >= 3:
-    #     return CalType.ElasticProperties
-    #
-    # if 'MAGMOM' in parameters.keys():
-    #     return CalType.MagneticProperties
-    # raise ValueError('无法判断提取类型，无法提取')
+# if len(collections) == 1:
+#     return collections[0]
+# else:
+#     name = rootPath.lower()
+#     if 'static' in name:
+#         return CalType.StaticCalculation
+#     elif 'dos' in name or 'density' in name:
+#         return CalType.DensityOfStates
+#     elif 'geometry' in name or 'scf' in name or 'optim' in name:
+#         return CalType.GeometryOptimization
+#     elif 'band' in name:
+#         return CalType.BandStructure
+#     elif 'elastic' in name:
+#         return CalType.ElasticProperties
+#     elif 'dielectric' in name:
+#         return CalType.DielectricProperties
+#
+# para_list = ['IBRION', 'LORBIT', 'LOPTICS', 'LEPSILON', 'LCALCEPS', 'ISIF', 'MAGMOM']
+# parameters = {key: parm.get(key, None) for key in para_list}
+# if parameters['IBRION'] == 1 or parameters['IBRION'] == 2 or parameters['IBRION'] == 3:
+#     return CalType.GeometryOptimization
+# if parameters['IBRION'] == -1 and linecache.getline(os.path.join(rootPath, 'KPOINTS'), 3).lower().startswith(
+#         'l'):  # kpoints generation para
+#     return CalType.BandStructure
+# if ('LOPTICS' in parameters.keys() and parameters['LOPTICS']) or parameters['IBRION'] == 7 or parameters[
+#     'IBRION'] == 8 \
+#         or (parameters['IBRION'] == 5 and (('LEPSILON' in parameters.keys() and parameters['LEPSILON']) or (
+#         'LCALCEPS' in parameters.keys() and parameters['LCALCEPS']))) \
+#         or (parameters['IBRION'] == 6 and (('LEPSILON' in parameters.keys() and parameters['LEPSILON']) or (
+#         'LCALCEPS' in parameters.keys() and parameters['LCALCEPS']))):
+#     return CalType.DielectricProperties
+# if parameters['IBRION'] == -1 and parameters['LORBIT']:
+#     return CalType.DensityOfStates
+# if parameters['IBRION'] == -1:
+#     return CalType.StaticCalculation
+# if (parameters['IBRION'] == 5 or parameters['IBRION'] == 6) and parameters['ISIF'] >= 3:
+#     return CalType.ElasticProperties
+#
+# if 'MAGMOM' in parameters.keys():
+#     return CalType.MagneticProperties
+# raise ValueError('无法判断提取类型，无法提取')
