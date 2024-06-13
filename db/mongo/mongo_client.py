@@ -10,6 +10,7 @@
 """
 from gridfs import GridFS
 from pymongo import MongoClient
+import bson
 
 
 class Mongo:
@@ -26,9 +27,10 @@ class Mongo:
         object_ids = conn.insert_many(data).inserted_ids
         return object_ids
 
-    def save_large(self, data, db, collection):
+    def save_large(self, data, db):
         fs = GridFS(self.client[db])
-        object_id = fs.put(data)
+        bson_data = bson.BSON.encode(data)
+        object_id = fs.put(bson_data)
         return object_id
 
     def close(self):

@@ -28,6 +28,8 @@ class Procar:
         eigenvalues = []
         EigenvalOcc = []
         spin_index = 0
+        fields = []
+        done = False
 
 
         for line in self.lines:
@@ -38,8 +40,6 @@ class Procar:
                 nkpoints = int(parts[3])
                 nbands = int(parts[7])
                 nions = int(parts[11])
-
-
                 if spin_index == 0:
                     eigenvalues = [[[] for _ in range(nkpoints)] for _ in range(2)]
                     EigenvalOcc = [[[] for _ in range(nkpoints)] for _ in range(2)]
@@ -60,6 +60,12 @@ class Procar:
                 eigenvalues[spin_index][current_kpoint].append(eigenval_data)
                 EigenvalOcc[spin_index][current_kpoint].append(eigenval_occ)
 
+            elif line.startswith("ion") and not done:
+                parts = line.split()
+                for part in parts[1:-1]:
+                    fields.append(part)
+
+
         self.nkpoints = nkpoints
         self.nbands = nbands
         self.nions = nions
@@ -67,6 +73,7 @@ class Procar:
         self.eigenvalues = eigenvalues
         self.occupancies = EigenvalOcc
         self.IsSpinPolarized = True if spin_index == 0 else False
+        self.fields = fields
 
     def getEigenValues(self):
         EigenvalData = {}
@@ -87,3 +94,20 @@ class Procar:
             "EigenvalData": EigenvalData,
             "EigenvalOcc": EigenvalOcc
         }
+
+    def getProjectedEigenvalOnIonOrbitals(self):
+        DecomposedLength = len(self.fields)
+        IsLmDecomposed = True if DecomposedLength == 9 or DecomposedLength == 16 else False
+        Data = []
+        return {
+            "NumberOfGeneratedKPoints": self.nkpoints,
+            "NumberOfBand": self.nbands,
+            "IsSpinPolarized": self.IsSpinPolarized,
+            "NumberOfIons": self.nions,
+            "Decomposed": self.fields,
+            "DecomposedLength": DecomposedLength,
+            "IsLmDecomposed": IsLmDecomposed,
+            "KPoints": self.KPoints,
+            "Data": Data  # usually big
+        }
+

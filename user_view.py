@@ -10,7 +10,7 @@
 """
 import sys
 import time
-import linecache
+import bson
 
 from db.mongo.mongo_client import Mongo
 from entries.calculations import CalculateEntries
@@ -143,10 +143,15 @@ def vasp_extract(root_path: str, log):
         bson = cal_entry.to_bson()
         # 保存到数据库
         size = get_deep_size(bson)
-        if size < 16793598:
+        if size<16*1024*1024:
             id = mongo.save_one(bson, database, cal_type)
-        # else:
-        #     id = mongo.save_large(bson, database, cal_type)
+        else:
+            if 'Properties' in bson:
+                properties = bson['Properties']
+                file_id = mongo.save_large(properties,database)
+                bson['Properties']=file_id
+            id = mongo.save_one(bson, database, cal_type)
+
 
     mongo.close()
     outFile.close()
@@ -188,6 +193,8 @@ def get_deep_size(obj, seen=None):
     elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
         size += sum([get_deep_size(i, seen) for i in obj])
     return size
+
+
 
 # def getCalType(rootPath, collections, parm):
 # if len(collections) == 1:

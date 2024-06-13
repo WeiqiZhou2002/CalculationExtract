@@ -31,9 +31,8 @@ class DensityOfStates(BaseCalculation):
 
     def getPartialDos(self):
         if self.vasprunParser is not None:
-            return self.vasprunParser.getPatialDos()
+            return self.vasprunParser.getPartialDos()
         elif 'doscar' in self.file_parser:
-
             return self.file_parser['doscar'].getPartialDos()
         else:
             return {}

@@ -166,88 +166,16 @@ class BandStructure(BaseCalculation):
                 "CBMFromBand": cbmEnergy
             }
 
-    def getProjectedEigenvalOnIonOrbitals(self):
-        """
-        提取分原子能带投影
-        :return:
-        """
-        NumberOfGeneratedKPoints = 0
-        NumberOfBand = 0
-        IsSpinPolarized = False
-        NumberOfIons = 0
-        DecomposedLength = 0
-        IsLmDecomposed = False
-        KPoints = None
-        Data = {}
-        if self.vasprunParser is None:
+
+    def getEigenData(self):
+        if self.vasprunParser is not None:
+            return self.vasprunParser.getEigenValues()
+        elif 'eigenval' in self.file_parser:
+            return self.file_parser['eigenval'].getEigenValues()
+        elif 'procar' in self.file_parser:
+            return self.file_parser['procar'].getEigenValues()
+        else:
             return {}
-        child = self.vasprunParser.root.find("./calculation[last()]/projected/array")
-        if child is None:
-            return None
-        KPoints = self.vasprunParser.kPoints
-        NumberOfGeneratedKPoints = len(KPoints)
-
-        fields = []
-        for field in child.findall('field'):
-            fields.append(field.text.strip())
-        DecomposedLength = len(fields)
-        IsLmDecomposed = True if DecomposedLength == 9 or DecomposedLength == 16 else False
-
-        # 获取原数据格式
-        data = []
-        for s in child.find('set').findall('set'):  # spin
-            spin = Spin.up if s.attrib["comment"] == "spin 1" else Spin.down
-            spins = []
-            for i, kpoint in enumerate(s.findall('set')):
-                kpoints = []
-                for j, band in enumerate(kpoint.findall('set')):
-                    irons = parseVarray(band)
-                    kpoints.append(irons)
-                spins.append(kpoints)
-            data.append(spins)
-        # print(data)
-        # 数据格式变换
-        NumberOfIons = len(data[0][0][0])
-        NumberOfBand = len(data[0][0])
-        IsSpinPolarized = True if len(data) == 2 else False
-        # spin -> kpoint -> band -> iron -> orbital
-        # spin-> iron -> kpoint -> band -> orbital
-        # 调整维度
-        data_array = np.array(data)
-        data_trans = np.transpose(data_array, (0, 3, 1, 2, 4))
-        data = data_trans.tolist()
-
-        # 格式保存
-        for s in range(len(data)):
-            spindata = []
-            for i in range(NumberOfIons):
-                ironsdata = []
-                for j in range(NumberOfGeneratedKPoints):
-                    points = []
-                    for k in range(NumberOfBand):
-                        bands = {}
-                        for l in range(DecomposedLength):
-                            bands[fields[l]] = data[s][i][j][k][l]
-                        points.append(bands)
-                    ironsdata.append(points)
-                spindata.append(ironsdata)
-            if s == 0:
-                Data[Spin.up] = spindata
-            elif s == 1:
-                Data[Spin.down] = spindata
-        return {
-            "NumberOfGeneratedKPoints": NumberOfGeneratedKPoints,
-            "NumberOfBand": NumberOfBand,
-            "IsSpinPolarized": IsSpinPolarized,
-            "NumberOfIons": NumberOfIons,
-            "Decomposed": fields,
-            "DecomposedLength": DecomposedLength,
-            "IsLmDecomposed": IsLmDecomposed,
-            "KPoints": KPoints,
-            # "Data": Data
-            # 数据太大，导致不能写入数据库
-            "Data": {}
-        }
 
 
     def to_bson(self):
@@ -263,9 +191,8 @@ class BandStructure(BaseCalculation):
             "ThermodynamicProperties": self.getThermoDynamicProperties(),
             "ElectronicProperties": {
                 'AtomicCharge': self.atomicCharge,
-                'EigenValues': self.file_parser['eigenval'].getEigenValues(),
-                'test': self.file_parser['procar'].getEigenValues(),
-                'ProjectedEigenVal_on_IonOrbitals': self.getProjectedEigenvalOnIonOrbitals(),
+                'EigenValues': self.getEigenData(),
+                'ProjectedEigenVal_on_IonOrbitals': self.vasprunParser.getProjectedEigenvalOnIonOrbitals(),
                 'GapFromBand': self.getGapFromBand()
             },
             'MagneticProperties': {
