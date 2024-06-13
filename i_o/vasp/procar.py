@@ -11,6 +11,8 @@
 from public.tools.Electronic import Spin
 import re
 
+from public.tools.helper import parseVarray
+
 
 class Procar:
     def __init__(self, filename):
@@ -30,10 +32,10 @@ class Procar:
         spin_index = 0
         fields = []
         done = False
+        data = []
 
-
-        for line in self.lines:
-            line = line.strip()
+        for i in range(len(self.lines)):
+            line = self.lines[i].strip()
 
             if line.startswith("# of k-points:"):
                 parts = line.split()
@@ -44,7 +46,7 @@ class Procar:
                     eigenvalues = [[[] for _ in range(nkpoints)] for _ in range(2)]
                     EigenvalOcc = [[[] for _ in range(nkpoints)] for _ in range(2)]
                     KPoints = [[0.0, 0.0, 0.0] for _ in range(nkpoints)]
-
+                    data = [[[] for _ in range(nkpoints)] for _ in range(2)]
                 spin_index += 1
                 spin_index %= 2
             elif line.startswith("k-point"):
@@ -52,19 +54,21 @@ class Procar:
                 current_kpoint = int(parts[1]) - 1
                 kpoint_coords = [float(coord) for coord in re.findall(r'-?\d+\.\d+', ' '.join(parts[2:6]))]
                 KPoints[current_kpoint] = kpoint_coords
-
             elif line.startswith("band"):
                 parts = line.split()
                 eigenval_data = float(parts[4])
                 eigenval_occ = float(parts[7])
                 eigenvalues[spin_index][current_kpoint].append(eigenval_data)
                 EigenvalOcc[spin_index][current_kpoint].append(eigenval_occ)
-
             elif line.startswith("ion") and not done:
                 parts = line.split()
                 for part in parts[1:-1]:
                     fields.append(part)
-
+                band=[]
+                for j in range(nions):
+                    irons = parseVarray(self.lines[i+j].strip())
+                    band.append(irons)
+                data[spin_index-1][current_kpoint].append(band)
 
         self.nkpoints = nkpoints
         self.nbands = nbands
@@ -74,6 +78,7 @@ class Procar:
         self.occupancies = EigenvalOcc
         self.IsSpinPolarized = True if spin_index == 0 else False
         self.fields = fields
+        self.data = data
 
     def getEigenValues(self):
         EigenvalData = {}
@@ -98,7 +103,24 @@ class Procar:
     def getProjectedEigenvalOnIonOrbitals(self):
         DecomposedLength = len(self.fields)
         IsLmDecomposed = True if DecomposedLength == 9 or DecomposedLength == 16 else False
-        Data = []
+        Data = {}
+        for s in range(len(self.data)):
+            spindata = []
+            for i in range(self.nions):
+                ironsdata = []
+                for j in range(self.nkpoints):
+                    points = []
+                    for k in range(self.nbands):
+                        bands = {}
+                        for l in range(DecomposedLength):
+                            bands[self.fields[l]] = self.data[s][i][j][k][l]
+                        points.append(bands)
+                    ironsdata.append(points)
+                spindata.append(ironsdata)
+            if s == 0:
+                Data[Spin.up] = spindata
+            elif s == 1:
+                Data[Spin.down] = spindata
         return {
             "NumberOfGeneratedKPoints": self.nkpoints,
             "NumberOfBand": self.nbands,
@@ -110,4 +132,3 @@ class Procar:
             "KPoints": self.KPoints,
             "Data": Data  # usually big
         }
-

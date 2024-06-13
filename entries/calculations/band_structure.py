@@ -10,8 +10,6 @@
 """
 from .base_calculation import BaseCalculation
 import numpy as np
-from public.tools.Electronic import Spin
-from public.tools.helper import parseVarray
 
 
 class BandStructure(BaseCalculation):
@@ -20,8 +18,6 @@ class BandStructure(BaseCalculation):
         self.atomicMagnetization = None
         self.linearMagneticMoment = None
         super().__init__(file_parsers)
-
-
 
     def getGapFromBand(self):
         """
@@ -39,7 +35,7 @@ class BandStructure(BaseCalculation):
         BandsNum = eigenval["NumberOfBand"]
         Energies = eigenval["EigenvalData"]
         Kpoints = eigenval["KPoints"]
-        efermi = eigenval.get('FermiEnergy',None)
+        efermi = eigenval.get('FermiEnergy', None)
         energies = []
         kpoints = []
         for t in Energies.values():
@@ -166,7 +162,6 @@ class BandStructure(BaseCalculation):
                 "CBMFromBand": cbmEnergy
             }
 
-
     def getEigenData(self):
         if self.vasprunParser is not None:
             return self.vasprunParser.getEigenValues()
@@ -177,6 +172,13 @@ class BandStructure(BaseCalculation):
         else:
             return {}
 
+    def getProjectedEigenvalOnIonOrbitals(self):
+        if self.vasprunParser is not None:
+            return self.vasprunParser.getProjectedEigenvalOnIonOrbitals()
+        elif 'procar' in self.file_parser:
+            return self.file_parser['procar'].getProjectedEigenvalOnIonOrbitals()
+        else:
+            return {}
 
     def to_bson(self):
         doc = self.basicDoc
@@ -192,7 +194,7 @@ class BandStructure(BaseCalculation):
             "ElectronicProperties": {
                 'AtomicCharge': self.atomicCharge,
                 'EigenValues': self.getEigenData(),
-                'ProjectedEigenVal_on_IonOrbitals': self.vasprunParser.getProjectedEigenvalOnIonOrbitals(),
+                'ProjectedEigenVal_on_IonOrbitals': self.getProjectedEigenvalOnIonOrbitals(),
                 'GapFromBand': self.getGapFromBand()
             },
             'MagneticProperties': {
