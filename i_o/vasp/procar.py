@@ -10,8 +10,7 @@
 """
 from public.tools.Electronic import Spin
 import re
-
-from public.tools.helper import parseVarray
+import numpy as np
 
 
 class Procar:
@@ -33,6 +32,7 @@ class Procar:
         fields = []
         done = False
         data = []
+        spin = None
 
         for i in range(len(self.lines)):
             line = self.lines[i].strip()
@@ -46,9 +46,11 @@ class Procar:
                     eigenvalues = [[[] for _ in range(nkpoints)] for _ in range(2)]
                     EigenvalOcc = [[[] for _ in range(nkpoints)] for _ in range(2)]
                     KPoints = [[0.0, 0.0, 0.0] for _ in range(nkpoints)]
-                    data = [[[] for _ in range(nkpoints)] for _ in range(2)]
                 spin_index += 1
                 spin_index %= 2
+                if spin is not None:
+                    data.append(spin)
+                spin=[[] for _ in range(nkpoints)]
             elif line.startswith("k-point"):
                 parts = line.split()
                 current_kpoint = int(parts[1]) - 1
@@ -60,15 +62,30 @@ class Procar:
                 eigenval_occ = float(parts[7])
                 eigenvalues[spin_index][current_kpoint].append(eigenval_data)
                 EigenvalOcc[spin_index][current_kpoint].append(eigenval_occ)
+            elif line.startswith("ion") and done:
+                band = []
+                for j in range(nions):
+                    irons = []
+                    curline = self.lines[i + j + 1].strip().split()
+                    for num in curline[1:-1]:
+                        irons.append(float(num))
+                    band.append(irons)
+                spin[current_kpoint].append(band)
             elif line.startswith("ion") and not done:
                 parts = line.split()
                 for part in parts[1:-1]:
                     fields.append(part)
+                done = True
                 band=[]
                 for j in range(nions):
-                    irons = parseVarray(self.lines[i+j].strip())
+                    irons = []
+                    curline = self.lines[i+j+1].strip().split()
+                    for num in curline[1:-1]:
+                        irons.append(float(num))
                     band.append(irons)
-                data[spin_index-1][current_kpoint].append(band)
+                spin[current_kpoint].append(band)
+        data.append(spin)
+
 
         self.nkpoints = nkpoints
         self.nbands = nbands
@@ -78,7 +95,9 @@ class Procar:
         self.occupancies = EigenvalOcc
         self.IsSpinPolarized = True if spin_index == 0 else False
         self.fields = fields
-        self.data = data
+        data_array = np.array(data)
+        data_trans = np.transpose(data_array, (0, 3, 1, 2, 4))
+        self.data = data_trans.tolist()
 
     def getEigenValues(self):
         EigenvalData = {}
