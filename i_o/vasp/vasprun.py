@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-"""
-@Project    : CalculationExtract
-@File       : vasprun.py
-@IDE        : PyCharm
-@Author     : zychen@cnic.cn & wzhou255@wisc.edu
-@Date       : 2024/5/30 16:22
-@Description:
-"""
+
 
 import time
 import xml.etree.cElementTree as ET
@@ -32,8 +25,9 @@ class Vasprun:
         self.output_structure = None
         self.input_structure = None
         self.filename = vaspPath
-        tree = ET.parse(vaspPath)
-        if tree is None:
+        try:
+            tree = ET.parse(vaspPath)
+        except ET.ParseError:
             raise ValueError('File content error, not parse!')
         self.root = tree.getroot()
         self.calculationType = None
