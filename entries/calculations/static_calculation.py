@@ -19,6 +19,12 @@ class StaticCalculation(BaseCalculation):
         self.linearMagneticMoment = None
         super().__init__(file_parsers)
 
+    def getChgcarInfo(self):
+        if 'chgcar' in self.file_parser:
+            return self.file_parser['chgcar'].getChgcarInfo()
+        else:
+            return {}
+
     def to_bson(self):
         doc = self.basicDoc
         if self.outcarParser is not None:
@@ -39,7 +45,7 @@ class StaticCalculation(BaseCalculation):
                 'AtomicMagnetization': self.atomicMagnetization,
                 'LinearMagneticMoment': self.linearMagneticMoment
             },
-            'ChgcarInfo': self.file_parser['chgcar'].getChgcarInfo()
+            'ChgcarInfo': self.getChgcarInfo()
         }
         doc['Files'] = [parser.filename for parser in self.file_parser.values()]
 

@@ -26,13 +26,15 @@ class Procar:
         spin = Spin.down
 
         KPoints = []
-        eigenvalues = []
+        eigenvaluesData = []
         EigenvalOcc = []
         spin_index = 0
         fields = []
         done = False
         data = []
         spin = None
+        occupancy = None
+        eigenvalues = None
 
         for i in range(len(self.lines)):
             line = self.lines[i].strip()
@@ -43,13 +45,18 @@ class Procar:
                 nbands = int(parts[7])
                 nions = int(parts[11])
                 if spin_index == 0:
-                    eigenvalues = [[[] for _ in range(nkpoints)] for _ in range(2)]
-                    EigenvalOcc = [[[] for _ in range(nkpoints)] for _ in range(2)]
+
                     KPoints = [[0.0, 0.0, 0.0] for _ in range(nkpoints)]
                 spin_index += 1
                 spin_index %= 2
                 if spin is not None:
                     data.append(spin)
+                if occupancy is not None:
+                    EigenvalOcc.append(occupancy)
+                if eigenvalues is not None:
+                    eigenvaluesData.append(eigenvalues)
+                occupancy = [[] for _ in range(nkpoints)]
+                eigenvalues = [[] for _ in range(nkpoints)]
                 spin=[[] for _ in range(nkpoints)]
             elif line.startswith("k-point"):
                 parts = line.split()
@@ -60,8 +67,8 @@ class Procar:
                 parts = line.split()
                 eigenval_data = float(parts[4])
                 eigenval_occ = float(parts[7])
-                eigenvalues[spin_index][current_kpoint].append(eigenval_data)
-                EigenvalOcc[spin_index][current_kpoint].append(eigenval_occ)
+                eigenvalues[current_kpoint].append(eigenval_data)
+                occupancy[current_kpoint].append(eigenval_occ)
             elif line.startswith("ion") and done:
                 band = []
                 for j in range(nions):
@@ -85,18 +92,23 @@ class Procar:
                     band.append(irons)
                 spin[current_kpoint].append(band)
         data.append(spin)
+        EigenvalOcc.append(occupancy)
+        eigenvaluesData.append(eigenvalues)
 
 
         self.nkpoints = nkpoints
         self.nbands = nbands
         self.nions = nions
         self.KPoints = KPoints
-        self.eigenvalues = eigenvalues
+        self.eigenvalues = eigenvaluesData
         self.occupancies = EigenvalOcc
         self.IsSpinPolarized = True if spin_index == 0 else False
         self.fields = fields
         data_array = np.array(data)
-        data_trans = np.transpose(data_array, (0, 3, 1, 2, 4))
+        if data[0] is not None:
+            data_trans = np.transpose(data_array, (0, 3, 1, 2, 4))
+        else:
+            data_trans = data_array
         self.data = data_trans.tolist()
 
     def getEigenValues(self):

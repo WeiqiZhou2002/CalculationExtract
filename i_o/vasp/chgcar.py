@@ -18,10 +18,20 @@ class Chgcar:
         with open(self.filename, 'r') as f:
             self.lines = f.readlines()
             f.close()
+        self.NGX = 0
+        self.NGY = 0
+        self.NGZ = 0
+        self.GRID = np.zeros((0, 0, 0))
+
+    def getChgcarInfo(self):
+        if len(self.lines) < 7:
+            raise ValueError(f"File {self.filename} is too short to be a valid CHGCAR file.")
         site_line = self.lines[6].strip()
         site_numbers = list(map(int, re.split(r'\s+', site_line)))
         site_length = sum(site_numbers)
         start_line = 8 + site_length + 1
+        if start_line >= len(self.lines):
+            raise ValueError(f"File {self.filename} does not contain enough lines for the grid information.")
         grid_line = self.lines[start_line].strip()
         ngx, ngy, ngz = map(int, re.split(r'\s+', grid_line)[0:3])
         self.NGX = ngx
@@ -43,9 +53,6 @@ class Chgcar:
                 for k in range(ngz):
                     self.GRID[i, j, k] = flat_data[index]
                     index += 1
-
-    def getChgcarInfo(self):
-
         doc = {}
         doc["NGX"] = self.NGX
         doc["NGY"] = self.NGY
