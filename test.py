@@ -5,6 +5,8 @@ import numpy as np
 import xml.etree.ElementTree as ET
 
 from i_o.vasp.doscar import Doscar
+from i_o.vasp.eigenval import Eigenval
+from i_o.vasp.incar import Incar
 from i_o.vasp.procar import Procar
 from i_o.vasp.chgcar import Chgcar
 from i_o.vasp.vasprun import Vasprun
@@ -114,6 +116,67 @@ class TestDoscar(unittest.TestCase):
         self.assertEqual(info["NumberOfGridPoints"], 301)
         self.assertEqual(info["Energies"][0], -56.924)
         self.assertEqual(info["TdosData"][0][0], 0)
+        # whole list check
+
+
+class TestEigenval(unittest.TestCase):
+
+    def setUp(self):
+        with open("testdata/EIGENVAL", "r") as file:
+            self.mock_data = file.read()
+
+    @patch("builtins.open", new_callable=mock_open, read_data="")
+    def test_init(self, mock_file):
+        eigenval = Eigenval("fakefile")
+        self.assertEqual(eigenval.filename, "fakefile")
+
+
+    @patch("builtins.open", new_callable=mock_open, read_data="")
+    def test_empty_file(self, mock_file):
+        with self.assertRaises(ValueError) as context:
+            eigenval = Eigenval("fakefile")
+            info = eigenval.getEigenValues()
+        self.assertIn("File fakefile is too short to be a valid EIGENVAL file.", str(context.exception))
+
+    @patch("builtins.open", new_callable=mock_open)
+    def test_get_eigenval(self, mock_file):
+        mock_file.return_value.readlines.return_value = self.mock_data.splitlines()
+        eigenval = Eigenval("fakefile")
+        info = eigenval.getEigenValues()
+        self.assertEqual(info["NumberOfGeneratedKPoints"], 180)
+        self.assertEqual(info["NumberOfBand"], 32)
+        self.assertEqual(info["IsSpinPolarized"], True)
+        self.assertEqual(info["KPoints"][1][0], 0.02631579)
+        self.assertEqual(info["EigenvalData"]["spin 1"][0][0], -6.901047)
+        self.assertEqual(info["EigenvalOcc"]["spin 1"][0][0], 1.0)
+        # whole list check
+
+
+class TestIncar(unittest.TestCase):
+
+    def setUp(self):
+        with open("testdata/INCAR", "r") as file:
+            self.mock_data = file.read()
+
+    @patch("builtins.open", new_callable=mock_open, read_data="")
+    def test_init(self, mock_file):
+        incar = Incar("fakefile")
+        self.assertEqual(incar.filename, "fakefile")
+        self.assertEqual(incar.calculationType, None)
+
+    @patch("builtins.open", new_callable=mock_open, read_data="")
+    def test_empty_file(self, mock_file):
+        with self.assertRaises(ValueError) as context:
+            incar = Incar("fakefile")
+
+        self.assertIn("File fakefile is too short to be a valid EIGENVAL file.", str(context.exception))
+
+    @patch("builtins.open", new_callable=mock_open)
+    def test_get_caltype(self, mock_file):
+        mock_file.return_value.readlines.return_value = self.mock_data.splitlines()
+        incar = Incar("fakefile")
+        caltype = incar.getCalType()
+        self.assertEqual(caltype, 'BandStructure')
         # whole list check
 
 
