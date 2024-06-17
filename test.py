@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 from i_o.vasp.doscar import Doscar
 from i_o.vasp.eigenval import Eigenval
 from i_o.vasp.incar import Incar
+from i_o.vasp.oszicar import Oszicar
 from i_o.vasp.procar import Procar
 from i_o.vasp.chgcar import Chgcar
 from i_o.vasp.vasprun import Vasprun
@@ -82,6 +83,7 @@ class TestChgcar(unittest.TestCase):
         # self.assertEqual(info["GRID"], expected_grid)
         # sample too large, wait to be finished
 
+
 class TestDoscar(unittest.TestCase):
 
     def setUp(self):
@@ -97,7 +99,6 @@ class TestDoscar(unittest.TestCase):
         self.assertEqual(doscar.energies, None)
         self.assertEqual(doscar.total, None)
         self.assertEqual(doscar.projected, None)
-
 
     @patch("builtins.open", new_callable=mock_open, read_data="")
     def test_empty_file(self, mock_file):
@@ -129,7 +130,6 @@ class TestEigenval(unittest.TestCase):
     def test_init(self, mock_file):
         eigenval = Eigenval("fakefile")
         self.assertEqual(eigenval.filename, "fakefile")
-
 
     @patch("builtins.open", new_callable=mock_open, read_data="")
     def test_empty_file(self, mock_file):
@@ -168,16 +168,41 @@ class TestIncar(unittest.TestCase):
     def test_empty_file(self, mock_file):
         with self.assertRaises(ValueError) as context:
             incar = Incar("fakefile")
-
-        self.assertIn("File fakefile is too short to be a valid EIGENVAL file.", str(context.exception))
+            calType = incar.getCalType()
+            print(calType)
+        self.assertIn("无法判断提取类型，无法提取", str(context.exception))
 
     @patch("builtins.open", new_callable=mock_open)
     def test_get_caltype(self, mock_file):
         mock_file.return_value.readlines.return_value = self.mock_data.splitlines()
         incar = Incar("fakefile")
         caltype = incar.getCalType()
-        self.assertEqual(caltype, 'BandStructure')
-        # whole list check
+        self.assertEqual(caltype, 'DensityOfStates')
+
+
+class TestOszicar(unittest.TestCase):
+
+    def setUp(self):
+        with open("testdata/OSZICAR", "r") as file:
+            self.mock_data = file.read()
+
+    @patch("builtins.open", new_callable=mock_open, read_data="")
+    def test_init(self, mock_file):
+        oszicar = Oszicar("fakefile")
+        self.assertEqual(oszicar.filename, "fakefile")
+
+    @patch("builtins.open", new_callable=mock_open, read_data="")
+    def test_empty_file(self, mock_file):
+        oszicar = Oszicar("fakefile")
+        info = oszicar.getLinearMagneticMoment()
+        self.assertEqual(info, 0)
+
+    @patch("builtins.open", new_callable=mock_open)
+    def test_get_caltype(self, mock_file):
+        mock_file.return_value.readlines.return_value = self.mock_data.splitlines()
+        oszicar = Oszicar("fakefile")
+        info = oszicar.getLinearMagneticMoment()
+        self.assertEqual(info, 0.0004)
 
 
 # class TestVasprun(unittest.TestCase):

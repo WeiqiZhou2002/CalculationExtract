@@ -29,12 +29,10 @@ class Oszicar:
         TODO: 提取最后一个值还是所有值
         :return:
         """
-        LinearMagneticMoment = {}
+        LinearMagneticMoment = 0.
         for line in self.lines:
             line = line.strip('\n').strip(' ')
             if line.find('mag=') != -1:
                 line2 = line.split('=')
                 LinearMagneticMoment = float(line2[-1])
-            else:
-                LinearMagneticMoment = 0.
         return LinearMagneticMoment

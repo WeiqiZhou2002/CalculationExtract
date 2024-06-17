@@ -66,7 +66,7 @@ class Incar:
             return CalType.StaticCalculation
         if parameters['IBRION'] in [5, 6] and parameters['ISIF'] >= 3:
             return CalType.ElasticProperties
-        if 'MAGMOM' in parameters:
+        if parameters['MAGMOM'] is not None:
             return CalType.MagneticProperties
 
         raise ValueError('无法判断提取类型，无法提取')
