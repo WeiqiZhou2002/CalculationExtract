@@ -13,6 +13,8 @@ class Doscar:
         self.projected = None
 
     def setup(self):
+        if len(self.lines) < 5:
+            raise ValueError(f"File {self.filename} is too short to be a valid DOSCAR file.")
         self.NIon = int(self.lines[0].split()[0])
         self.N = int(self.lines[5].split()[2])
         self.getTotalDos()

@@ -1,9 +1,13 @@
+import io
 import unittest
 from unittest.mock import mock_open, patch
 import numpy as np
+import xml.etree.ElementTree as ET
 
+from i_o.vasp.doscar import Doscar
 from i_o.vasp.procar import Procar
 from i_o.vasp.chgcar import Chgcar
+from i_o.vasp.vasprun import Vasprun
 
 
 class TestProcar(unittest.TestCase):
@@ -14,7 +18,6 @@ class TestProcar(unittest.TestCase):
 
     @patch("builtins.open", new_callable=mock_open, read_data="")
     def test_init(self, mock_file):
-        # 测试初始化方法
         procar = Procar("fakefile")
         self.assertEqual(procar.filename, "fakefile")
         self.assertEqual(procar.nkpoints, 0)
@@ -23,9 +26,7 @@ class TestProcar(unittest.TestCase):
 
     @patch("builtins.open", new_callable=mock_open)
     def test_read_procar_file(self, mock_file):
-        # 设置 mock 文件内容
         mock_file.return_value.readlines.return_value = self.mock_data.splitlines()
-        # 测试读取 PROCAR 文件
         procar = Procar("fakefile")
         self.assertEqual(procar.nkpoints, 75)
         self.assertEqual(procar.nbands, 252)
@@ -35,17 +36,24 @@ class TestProcar(unittest.TestCase):
         self.assertEqual(procar.occupancies[0][0][0], 2.00000000)
         self.assertEqual(procar.IsSpinPolarized, False)
 
+    @patch("builtins.open", new_callable=mock_open)
+    def test_get_projected_info(self, mock_file):
+        mock_file.return_value.readlines.return_value = self.mock_data.splitlines()
+        procar = Procar("fakefile")
+        info = procar.getProjectedEigenvalOnIonOrbitals()
+        self.assertEqual(info["Decomposed"], ['s', 'py', 'pz', 'px', 'dxy', 'dyz', 'dz2', 'dxz', 'x2-y2'])
+        self.assertEqual(info["DecomposedLength"], 9)
+        self.assertEqual(info["IsLmDecomposed"], True)
+
 
 class TestChgcar(unittest.TestCase):
 
     def setUp(self):
-        # 设置模拟的 CHGCAR 文件内容
         with open("testdata/CHGCAR", "r") as file:
             self.mock_data = file.read()
 
     @patch("builtins.open", new_callable=mock_open, read_data="")
     def test_init(self, mock_file):
-        # 测试初始化方法，确保类属性正确初始化
         chgcar = Chgcar("fakefile")
         self.assertEqual(chgcar.filename, "fakefile")
         self.assertEqual(chgcar.NGX, 0)
@@ -55,7 +63,6 @@ class TestChgcar(unittest.TestCase):
 
     @patch("builtins.open", new_callable=mock_open, read_data="")
     def test_empty_file(self, mock_file):
-        # 测试处理空文件的情况
         with self.assertRaises(ValueError) as context:
             chgcar = Chgcar("fakefile")
             info = chgcar.getChgcarInfo()
@@ -63,7 +70,6 @@ class TestChgcar(unittest.TestCase):
 
     @patch("builtins.open", new_callable=mock_open)
     def test_get_chgcar_info(self, mock_file):
-        # 设置 mock 文件内容为 self.mock_data
         mock_file.return_value.readlines.return_value = self.mock_data.splitlines()
         chgcar = Chgcar("fakefile")
         info = chgcar.getChgcarInfo()
@@ -74,6 +80,78 @@ class TestChgcar(unittest.TestCase):
         # self.assertEqual(info["GRID"], expected_grid)
         # sample too large, wait to be finished
 
+class TestDoscar(unittest.TestCase):
+
+    def setUp(self):
+        with open("testdata/DOSCAR", "r") as file:
+            self.mock_data = file.read()
+
+    @patch("builtins.open", new_callable=mock_open, read_data="")
+    def test_init(self, mock_file):
+        doscar = Doscar("fakefile")
+        self.assertEqual(doscar.filename, "fakefile")
+        self.assertEqual(doscar.NIon, None)
+        self.assertEqual(doscar.N, None)
+        self.assertEqual(doscar.energies, None)
+        self.assertEqual(doscar.total, None)
+        self.assertEqual(doscar.projected, None)
+
+
+    @patch("builtins.open", new_callable=mock_open, read_data="")
+    def test_empty_file(self, mock_file):
+        with self.assertRaises(ValueError) as context:
+            doscar = Doscar("fakefile")
+            doscar.setup()
+        self.assertIn("File fakefile is too short to be a valid DOSCAR file.", str(context.exception))
+
+    @patch("builtins.open", new_callable=mock_open)
+    def test_get_totalDos(self, mock_file):
+        mock_file.return_value.readlines.return_value = self.mock_data.splitlines()
+        doscar = Doscar("fakefile")
+        doscar.setup()
+        info = doscar.getTotalDos()
+        self.assertEqual(info["IsSpinPolarized"], True)
+        self.assertEqual(info["NumberOfGridPoints"], 301)
+        self.assertEqual(info["Energies"][0], -56.924)
+        self.assertEqual(info["TdosData"][0][0], 0)
+        # whole list check
+
+
+# class TestVasprun(unittest.TestCase):
+#
+#     def setUp(self):
+#         # 设置模拟的 Vasprun 文件内容
+#         with open("testdata/vasprun.xml", "r") as file:
+#             self.mock_data = file.read()
+#
+#     @patch("builtins.open", new_callable=mock_open, read_data="")
+#     def test_init_empty_file(self, mock_file):
+#         with self.assertRaises(ValueError) as context:
+#             vasprun = Vasprun("fakefile")
+#         self.assertIn("File content error, not parse!", str(context.exception))
+#
+#     @patch("builtins.open", new_callable=mock_open)
+#     def test_init_valid_file(self, mock_file):
+#         # 设置 ET.parse 正常解析模拟的文件内容
+#         mock_file.return_value.__enter__.return_value = io.StringIO(self.mock_data)
+#
+#         vasprun = Vasprun("testdata/vasprun.xml")
+#         self.assertEqual(vasprun.filename, "vasprun.xml")
+#         self.assertIsNotNone(vasprun.root)
+#
+#     @patch("builtins.open", new_callable=mock_open)
+#     @patch("xml.etree.ElementTree.parse")
+#     def test_get_software(self,mock_parse, mock_file):
+#         # 设置 mock 文件内容为 self.mock_data
+#         mock_file.return_value.readline.return_value = self.mock_data
+#         mock_parse.return_value = ET.ElementTree(ET.fromstring(self.mock_data))
+#
+#         vasprun = Vasprun("testdata/vasprun.xml")
+#         software_info = vasprun.getSoftware()
+#         self.assertEqual(software_info["SoftwareName"], "VASP")
+#         self.assertEqual(software_info["SoftwareVersion"], "5.4.4")
+#         self.assertEqual(software_info["Subversion"], "subver 1.0")
+#         self.assertEqual(software_info["Platform"], "Linux")
 
 if __name__ == "__main__":
     unittest.main()
