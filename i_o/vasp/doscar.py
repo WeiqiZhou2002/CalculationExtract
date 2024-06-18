@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 
@@ -12,14 +14,12 @@ class Doscar:
         self.total = None
         self.projected = None
 
-    def setup(self):
+    def getTotalDos(self):
         if len(self.lines) < 5:
-            raise ValueError(f"File {self.filename} is too short to be a valid DOSCAR file.")
+            warnings.warn(f"File {self.filename} is too short to be a valid EIGENVAL file.")
+            return {}
         self.NIon = int(self.lines[0].split()[0])
         self.N = int(self.lines[5].split()[2])
-        self.getTotalDos()
-
-    def getTotalDos(self):
         IsSpinPolarized = False
         self.energies = np.zeros(self.N)
         self.total = None
@@ -46,6 +46,11 @@ class Doscar:
         }
 
     def getPartialDos(self):
+        if len(self.lines) < 5:
+            warnings.warn(f"File {self.filename} is too short to be a valid EIGENVAL file.")
+            return {}
+        self.NIon = int(self.lines[0].split()[0])
+        self.N = int(self.lines[5].split()[2])
         projected = None
         IsSpinPolarized = False
         IsLmProjected = False

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 import numpy as np
+import warnings
+
 
 class KPoint:
     def __init__(self, name, coords):
@@ -18,10 +20,6 @@ class Eigenval:
         with open(self.filename, 'r') as f:
             self.lines = f.readlines()
 
-
-
-
-
     def getEigenValues(self):
         """
         Extract eigenvalue data
@@ -29,7 +27,8 @@ class Eigenval:
         """
 
         if len(self.lines) < 5:
-            raise ValueError(f"File {self.filename} is too short to be a valid EIGENVAL file.")
+            warnings.warn(f"File {self.filename} is too short to be a valid EIGENVAL file.")
+            return {}
         self.isSpin = int(self.lines[0].split()[3])
 
         # Get the number of k-points and bands

@@ -9,6 +9,8 @@
 @Description: 
 """
 import re
+import warnings
+
 import numpy as np
 
 
@@ -24,8 +26,9 @@ class Chgcar:
         self.GRID = np.zeros((0, 0, 0))
 
     def getChgcarInfo(self):
-        if len(self.lines) < 7:
-            raise ValueError(f"File {self.filename} is too short to be a valid CHGCAR file.")
+        if len(self.lines) < 5:
+            warnings.warn(f"File {self.filename} is too short to be a valid CHGCAR file.")
+            return {}
         site_line = self.lines[6].strip()
         site_numbers = list(map(int, re.split(r'\s+', site_line)))
         site_length = sum(site_numbers)

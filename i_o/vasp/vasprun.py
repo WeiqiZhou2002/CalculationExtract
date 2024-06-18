@@ -25,6 +25,7 @@ class Vasprun:
         self.output_structure = None
         self.input_structure = None
         self.filename = vaspPath
+        print(os.path.exists(vaspPath))
         try:
             tree = ET.parse(vaspPath)
         except ET.ParseError:

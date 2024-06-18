@@ -24,7 +24,6 @@ class DensityOfStates(BaseCalculation):
         if self.vasprunParser is not None:
             return self.vasprunParser.getTotalDos()
         elif 'doscar' in self.file_parser:
-            self.file_parser['doscar'].setup()
             return self.file_parser['doscar'].getTotalDos()
         else:
             return {}

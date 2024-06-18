@@ -8,6 +8,8 @@
 @Date       : 2024/5/30 16:30 
 @Description: 
 """
+import warnings
+
 import numpy as np
 from public.tools.periodic_table import PTable
 from public.composition import Composition
@@ -32,13 +34,16 @@ class Poscar:
         self.sites = None
 
     def setup(self):
-        self.lattice = self.getLattice()
-        self.composition = self.getComposition()
-        self.volume = self.getVolume()
-        self.numberOfSites = self.getNumberOfSites()
-        self.sites = self.getSites()
-        self.structure = Structure(lattice=self.lattice, composition=self.composition,sites=self.sites)
-        self.structure.setup()
+        if len(self.lines) < 7:
+            warnings.warn(f"File {self.filename} is too short to be a valid POSCAR file.")
+        else:
+            self.lattice = self.getLattice()
+            self.composition = self.getComposition()
+            self.volume = self.getVolume()
+            self.numberOfSites = self.getNumberOfSites()
+            self.sites = self.getSites()
+            self.structure = Structure(lattice=self.lattice, composition=self.composition,sites=self.sites)
+            self.structure.setup()
 
 
     def getComposition(self):

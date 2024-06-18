@@ -9,6 +9,7 @@
 @Description: Parser OUTCAR file
 """
 import re
+import warnings
 
 import numpy as np
 from monty.io import reverse_readfile, zopen
@@ -30,6 +31,8 @@ class Outcar:
         Get ResourceUsage
         :return:
         """
+        if len(self.lines) < 5:
+            warnings.warn(f"File {self.filename} is too short to be a valid OUTCAR file.")
         resourceUsage = {}
         for line in self.lines:
             line = line.strip('\n').strip(' ')
@@ -60,16 +63,16 @@ class Outcar:
         charge = []
         mag_x = []  # 仅考虑线性磁矩
         header = []
-        all_lines = []
-        for line in reverse_readfile(self.filename):
-            clean = line.strip()
-            all_lines.append(clean)
+        all_lines = self.lines
+        # for line in reverse_readfile(self.filename):
+        #     clean = line.strip()
+        #     all_lines.append(clean)
         # For single atom systems, VASP doesn't print a total line, so
         # reverse parsing is very difficult
         read_charge = False
         read_mag_x = False
 
-        all_lines.reverse()
+        # all_lines.reverse()
         for clean in all_lines:
             if read_charge or read_mag_x:
                 if clean.startswith("# of ion"):

@@ -1,5 +1,6 @@
 import io
 import unittest
+import warnings
 from unittest.mock import mock_open, patch
 import numpy as np
 import xml.etree.ElementTree as ET
@@ -8,6 +9,8 @@ from i_o.vasp.doscar import Doscar
 from i_o.vasp.eigenval import Eigenval
 from i_o.vasp.incar import Incar
 from i_o.vasp.oszicar import Oszicar
+from i_o.vasp.outcar import Outcar
+from i_o.vasp.poscar import Poscar
 from i_o.vasp.procar import Procar
 from i_o.vasp.chgcar import Chgcar
 from i_o.vasp.vasprun import Vasprun
@@ -66,10 +69,15 @@ class TestChgcar(unittest.TestCase):
 
     @patch("builtins.open", new_callable=mock_open, read_data="")
     def test_empty_file(self, mock_file):
-        with self.assertRaises(ValueError) as context:
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
             chgcar = Chgcar("fakefile")
             info = chgcar.getChgcarInfo()
-        self.assertIn("File fakefile is too short to be a valid CHGCAR file.", str(context.exception))
+            self.assertTrue(len(w) > 0)
+            self.assertTrue(any(item.category == UserWarning for item in w))
+            self.assertTrue(
+                any("File fakefile is too short to be a valid CHGCAR file." in str(item.message) for item in w))
+            self.assertEqual(info, {})
 
     @patch("builtins.open", new_callable=mock_open)
     def test_get_chgcar_info(self, mock_file):
@@ -102,16 +110,14 @@ class TestDoscar(unittest.TestCase):
 
     @patch("builtins.open", new_callable=mock_open, read_data="")
     def test_empty_file(self, mock_file):
-        with self.assertRaises(ValueError) as context:
-            doscar = Doscar("fakefile")
-            doscar.setup()
-        self.assertIn("File fakefile is too short to be a valid DOSCAR file.", str(context.exception))
+        doscar = Doscar("fakefile")
+        info = doscar.getTotalDos()
+        self.assertEqual(info, {})
 
     @patch("builtins.open", new_callable=mock_open)
     def test_get_totalDos(self, mock_file):
         mock_file.return_value.readlines.return_value = self.mock_data.splitlines()
         doscar = Doscar("fakefile")
-        doscar.setup()
         info = doscar.getTotalDos()
         self.assertEqual(info["IsSpinPolarized"], True)
         self.assertEqual(info["NumberOfGridPoints"], 301)
@@ -133,10 +139,9 @@ class TestEigenval(unittest.TestCase):
 
     @patch("builtins.open", new_callable=mock_open, read_data="")
     def test_empty_file(self, mock_file):
-        with self.assertRaises(ValueError) as context:
-            eigenval = Eigenval("fakefile")
-            info = eigenval.getEigenValues()
-        self.assertIn("File fakefile is too short to be a valid EIGENVAL file.", str(context.exception))
+        eigenval = Eigenval("fakefile")
+        info = eigenval.getEigenValues()
+        self.assertEqual(info, {})
 
     @patch("builtins.open", new_callable=mock_open)
     def test_get_eigenval(self, mock_file):
@@ -205,41 +210,90 @@ class TestOszicar(unittest.TestCase):
         self.assertEqual(info, 0.0004)
 
 
-# class TestVasprun(unittest.TestCase):
-#
-#     def setUp(self):
-#         # 设置模拟的 Vasprun 文件内容
-#         with open("testdata/vasprun.xml", "r") as file:
-#             self.mock_data = file.read()
-#
-#     @patch("builtins.open", new_callable=mock_open, read_data="")
-#     def test_init_empty_file(self, mock_file):
-#         with self.assertRaises(ValueError) as context:
-#             vasprun = Vasprun("fakefile")
-#         self.assertIn("File content error, not parse!", str(context.exception))
-#
-#     @patch("builtins.open", new_callable=mock_open)
-#     def test_init_valid_file(self, mock_file):
-#         # 设置 ET.parse 正常解析模拟的文件内容
-#         mock_file.return_value.__enter__.return_value = io.StringIO(self.mock_data)
-#
-#         vasprun = Vasprun("testdata/vasprun.xml")
-#         self.assertEqual(vasprun.filename, "vasprun.xml")
-#         self.assertIsNotNone(vasprun.root)
-#
-#     @patch("builtins.open", new_callable=mock_open)
-#     @patch("xml.etree.ElementTree.parse")
-#     def test_get_software(self,mock_parse, mock_file):
-#         # 设置 mock 文件内容为 self.mock_data
-#         mock_file.return_value.readline.return_value = self.mock_data
-#         mock_parse.return_value = ET.ElementTree(ET.fromstring(self.mock_data))
-#
-#         vasprun = Vasprun("testdata/vasprun.xml")
-#         software_info = vasprun.getSoftware()
-#         self.assertEqual(software_info["SoftwareName"], "VASP")
-#         self.assertEqual(software_info["SoftwareVersion"], "5.4.4")
-#         self.assertEqual(software_info["Subversion"], "subver 1.0")
-#         self.assertEqual(software_info["Platform"], "Linux")
+class TestOutcar(unittest.TestCase):
+
+    def setUp(self):
+        with open("testdata/OUTCAR", "r") as file:
+            self.mock_data = file.read()
+
+    @patch("builtins.open", new_callable=mock_open, read_data="")
+    def test_init(self, mock_file):
+        outcar = Outcar("fakefile")
+        self.assertEqual(outcar.filename, "fakefile")
+
+    @patch("builtins.open", new_callable=mock_open, read_data="")
+    def test_empty_file(self, mock_file):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            outcar = Outcar("fakefile")
+            info = outcar.getResourceUsage()
+            self.assertTrue(len(w) > 0)
+            self.assertTrue(any(item.category == UserWarning for item in w))
+            self.assertTrue(
+                any("File fakefile is too short to be a valid OUTCAR file." in str(item.message) for item in w))
+            self.assertEqual(info, {})
+
+    @patch("builtins.open", new_callable=mock_open)
+    def test_get_resourceUsage(self, mock_file):
+        mock_file.return_value.readlines.return_value = self.mock_data.splitlines()
+        outcar = Outcar("fakefile")
+        info = outcar.getResourceUsage()
+        self.assertEqual(info, {'AverageMemory': 0.0,
+                                'ElapsedTime': 3420.294,
+                                'MaxMemory': 308096.0,
+                                'SystemTime': 31.707,
+                                'TotalCores': 32,  #哪来的
+                                'TotalCpuTime': 3293.439,
+                                'UserTime': 3261.732})
+
+    @patch("builtins.open", new_callable=mock_open)
+    def test_get_ACandAM(self, mock_file):
+        mock_file.return_value.readlines.return_value = self.mock_data.splitlines()
+        outcar = Outcar("fakefile")
+        info = outcar.getAtomicChargeAndAtomicMagnetization()
+        self.assertEqual(info, 0)
+
+    @patch("builtins.open", new_callable=mock_open)
+    def test_get_EP(self, mock_file):
+        mock_file.return_value.readlines.return_value = self.mock_data.splitlines()
+        outcar = Outcar("fakefile")
+        info = outcar.getElasticProperties()
+        self.assertEqual(info, 0)
+
+
+class TestPoscar(unittest.TestCase):
+
+    def setUp(self):
+        with open("testdata/POSCAR", "r") as file:
+            self.mock_data = file.read()
+
+    @patch("builtins.open", new_callable=mock_open, read_data="")
+    def test_init(self, mock_file):
+
+        poscar = Poscar("fakefile")
+        self.assertEqual(poscar.filename, "fakefile")
+
+    @patch("builtins.open", new_callable=mock_open, read_data="")
+    def test_empty_file(self, mock_file):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            poscar = Poscar("fakefile")
+            poscar.setup()
+            self.assertTrue(len(w) > 0)
+            self.assertTrue(any(item.category == UserWarning for item in w))
+            self.assertTrue(
+                any("File fakefile is too short to be a valid POSCAR file." in str(item.message) for item in w))
+            self.assertEqual(poscar.sites, None)
+
+    @patch("builtins.open", new_callable=mock_open)
+    def test_get_info(self, mock_file):
+        mock_file.return_value.readlines.return_value = self.mock_data.splitlines()
+        poscar = Poscar("fakefile")
+        poscar.setup()
+        self.assertEqual(poscar.volume, 545.0027442269759)
+        self.assertEqual(poscar.numberOfSites, 48)
+
+
 
 if __name__ == "__main__":
     unittest.main()
