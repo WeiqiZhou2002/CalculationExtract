@@ -12,7 +12,6 @@ import re
 import warnings
 
 import numpy as np
-from monty.io import reverse_readfile, zopen
 
 
 class Outcar:
@@ -73,7 +72,8 @@ class Outcar:
         read_mag_x = False
 
         # all_lines.reverse()
-        for clean in all_lines:
+        for line in all_lines:
+            clean = line.strip()
             if read_charge or read_mag_x:
                 if clean.startswith("# of ion"):
                     header = re.split(r"\s{2,}", clean.strip())
@@ -119,11 +119,11 @@ class Outcar:
 
         # ElasticModuleMatrix: 弹性模量矩阵Cij
         all_lines = []
-        for line in reverse_readfile(self.filename):
+        for line in self.lines:
             clean = line.strip()
             all_lines.append(clean)
 
-        # all_lines.reverse()
+        all_lines.reverse()
         matrix_lines = []
         for i in range(len(all_lines)):
             if all_lines[i] == 'ELASTIC MODULI  (kBar)':

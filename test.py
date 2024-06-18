@@ -1,9 +1,9 @@
-import io
+
 import unittest
 import warnings
 from unittest.mock import mock_open, patch
 import numpy as np
-import xml.etree.ElementTree as ET
+
 
 from i_o.vasp.doscar import Doscar
 from i_o.vasp.eigenval import Eigenval
@@ -13,7 +13,7 @@ from i_o.vasp.outcar import Outcar
 from i_o.vasp.poscar import Poscar
 from i_o.vasp.procar import Procar
 from i_o.vasp.chgcar import Chgcar
-from i_o.vasp.vasprun import Vasprun
+
 
 
 class TestProcar(unittest.TestCase):
@@ -174,7 +174,6 @@ class TestIncar(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             incar = Incar("fakefile")
             calType = incar.getCalType()
-            print(calType)
         self.assertIn("无法判断提取类型，无法提取", str(context.exception))
 
     @patch("builtins.open", new_callable=mock_open)
@@ -239,26 +238,33 @@ class TestOutcar(unittest.TestCase):
         outcar = Outcar("fakefile")
         info = outcar.getResourceUsage()
         self.assertEqual(info, {'AverageMemory': 0.0,
-                                'ElapsedTime': 3420.294,
-                                'MaxMemory': 308096.0,
-                                'SystemTime': 31.707,
-                                'TotalCores': 32,  #哪来的
-                                'TotalCpuTime': 3293.439,
-                                'UserTime': 3261.732})
+                                'ElapsedTime': 242.138,
+                                'MaxMemory': 445736.0,
+                                'SystemTime': 1.757,
+                                'TotalCores': 28,  # 哪来的
+                                'TotalCpuTime': 240.004,
+                                'UserTime': 238.247})
 
     @patch("builtins.open", new_callable=mock_open)
     def test_get_ACandAM(self, mock_file):
         mock_file.return_value.readlines.return_value = self.mock_data.splitlines()
         outcar = Outcar("fakefile")
         info = outcar.getAtomicChargeAndAtomicMagnetization()
-        self.assertEqual(info, 0)
+        self.assertEqual(info[0][0], {'d': 0.0, 'p': 3.472, 's': 1.569, 'tot': 5.042})
+
+
+class TestOutcarEL(unittest.TestCase):
+
+    def setUp(self):
+        with open("testdata/OUTCAR_EL", "r") as file:
+            self.mock_data = file.read()
 
     @patch("builtins.open", new_callable=mock_open)
     def test_get_EP(self, mock_file):
         mock_file.return_value.readlines.return_value = self.mock_data.splitlines()
         outcar = Outcar("fakefile")
         info = outcar.getElasticProperties()
-        self.assertEqual(info, 0)
+        self.assertEqual(info['AnisotropyIndex'], 0.37962790312568373)
 
 
 class TestPoscar(unittest.TestCase):
@@ -269,7 +275,6 @@ class TestPoscar(unittest.TestCase):
 
     @patch("builtins.open", new_callable=mock_open, read_data="")
     def test_init(self, mock_file):
-
         poscar = Poscar("fakefile")
         self.assertEqual(poscar.filename, "fakefile")
 
@@ -292,7 +297,6 @@ class TestPoscar(unittest.TestCase):
         poscar.setup()
         self.assertEqual(poscar.volume, 545.0027442269759)
         self.assertEqual(poscar.numberOfSites, 48)
-
 
 
 if __name__ == "__main__":

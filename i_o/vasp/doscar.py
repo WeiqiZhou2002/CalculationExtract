@@ -16,7 +16,7 @@ class Doscar:
 
     def getTotalDos(self):
         if len(self.lines) < 5:
-            warnings.warn(f"File {self.filename} is too short to be a valid EIGENVAL file.")
+            warnings.warn(f"File {self.filename} is too short to be a valid DOSCAR file.")
             return {}
         self.NIon = int(self.lines[0].split()[0])
         self.N = int(self.lines[5].split()[2])
