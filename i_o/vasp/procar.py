@@ -8,6 +8,8 @@
 @Date       : 2024/5/30 16:29 
 @Description: 
 """
+import warnings
+
 from public.tools.Electronic import Spin
 import re
 import numpy as np
@@ -112,6 +114,9 @@ class Procar:
         self.data = data_trans.tolist()
 
     def getEigenValues(self):
+        if len(self.lines) < 5:
+            warnings.warn(f"File {self.filename} is too short to be a valid PROCAR file.")
+            return {}
         EigenvalData = {}
         EigenvalOcc = {}
         if self.IsSpinPolarized:
@@ -132,6 +137,9 @@ class Procar:
         }
 
     def getProjectedEigenvalOnIonOrbitals(self):
+        if len(self.lines) < 5:
+            warnings.warn(f"File {self.filename} is too short to be a valid PROCAR file.")
+            return {}
         DecomposedLength = len(self.fields)
         IsLmDecomposed = True if DecomposedLength == 9 or DecomposedLength == 16 else False
         Data = {}

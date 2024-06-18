@@ -30,6 +30,18 @@ class TestProcar(unittest.TestCase):
         self.assertEqual(procar.nbands, 0)
         self.assertEqual(procar.nions, 0)
 
+    @patch("builtins.open", new_callable=mock_open, read_data="")
+    def test_empty_file(self, mock_file):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            procar = Procar("fakefile")
+            info = procar.getEigenValues()
+            self.assertTrue(len(w) > 0)
+            self.assertTrue(any(item.category == UserWarning for item in w))
+            self.assertTrue(
+                any("File fakefile is too short to be a valid PROCAR file." in str(item.message) for item in w))
+            self.assertEqual(info, {})
+
     @patch("builtins.open", new_callable=mock_open)
     def test_read_procar_file(self, mock_file):
         mock_file.return_value.readlines.return_value = self.mock_data.splitlines()
@@ -110,9 +122,16 @@ class TestDoscar(unittest.TestCase):
 
     @patch("builtins.open", new_callable=mock_open, read_data="")
     def test_empty_file(self, mock_file):
-        doscar = Doscar("fakefile")
-        info = doscar.getTotalDos()
-        self.assertEqual(info, {})
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            doscar = Doscar("fakefile")
+            info = doscar.getTotalDos()
+            self.assertTrue(len(w) > 0)
+            self.assertTrue(any(item.category == UserWarning for item in w))
+            self.assertTrue(
+                any("File fakefile is too short to be a valid DOSCAR file." in str(item.message) for item in w))
+            self.assertEqual(info, {})
+
 
     @patch("builtins.open", new_callable=mock_open)
     def test_get_totalDos(self, mock_file):
@@ -139,9 +158,17 @@ class TestEigenval(unittest.TestCase):
 
     @patch("builtins.open", new_callable=mock_open, read_data="")
     def test_empty_file(self, mock_file):
-        eigenval = Eigenval("fakefile")
-        info = eigenval.getEigenValues()
-        self.assertEqual(info, {})
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            eigenval = Eigenval("fakefile")
+            info = eigenval.getEigenValues()
+            self.assertTrue(len(w) > 0)
+            self.assertTrue(any(item.category == UserWarning for item in w))
+            self.assertTrue(
+                any("File fakefile is too short to be a valid EIGENVAL file." in str(item.message) for item in w))
+            self.assertEqual(info, {})
+
 
     @patch("builtins.open", new_callable=mock_open)
     def test_get_eigenval(self, mock_file):

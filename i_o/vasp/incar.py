@@ -21,7 +21,6 @@ class Incar:
 
     def __init__(self, filepath):
         self.filename = filepath
-        print(os.path.exists(filepath))
         self.dict = {}
         self.calculationType = None
         self.kpoint_path = self.findKpointPath()
