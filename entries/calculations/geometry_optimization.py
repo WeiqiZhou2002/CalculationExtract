@@ -131,7 +131,10 @@ class GeometryOptimization(BaseCalculation):
         BandsNum = eigenval["NumberOfBand"]
         Energies = eigenval["EigenvalData"]
         Kpoints = eigenval["KPoints"]
-        efermi = eigenval["FermiEnergy"]
+        if self.vasprunParser is not None:
+            efermi = eigenval["FermiEnergy"]
+        elif 'outcar' in self.file_parser:
+            efermi = self.file_parser['outcar'].getEfermi()
         energies = []
         kpoints = []
         for t in Energies.values():

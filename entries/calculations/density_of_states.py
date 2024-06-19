@@ -43,10 +43,13 @@ class DensityOfStates(BaseCalculation):
             态密度能隙
             :return
         """
-        if self.vasprunParser is None:
+        if self.vasprunParser is not None:
+            child = self.vasprunParser.root.find("./calculation[last()]/dos/i[@name='efermi']")
+            efermi = float(child.text)
+        elif 'outcar' in self.file_parser:
+            efermi = self.file_parser['outcar'].getEfermi()
+        else:
             return {}
-        child = self.vasprunParser.root.find("./calculation[last()]/dos/i[@name='efermi']")
-        efermi = float(child.text)
         tdos = self.getTotalDos()
         isSpin = tdos["IsSpinPolarized"]
         number = tdos["NumberOfGridPoints"]

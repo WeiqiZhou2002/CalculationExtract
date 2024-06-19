@@ -9,6 +9,7 @@
 @Description:
 """
 import os.path
+import re
 
 
 class Oszicar:
@@ -36,3 +37,45 @@ class Oszicar:
                 line2 = line.split('=')
                 LinearMagneticMoment = float(line2[-1])
         return LinearMagneticMoment
+
+    def getElectronicSteps(self, EDIFF):
+        electronicSteps = []
+        energys = []
+        totalenergydiffs = []
+        first = True
+
+
+        for line in self.lines:
+            if line.startswith('DAV'):
+                parts = re.split(r'\s+', line.strip())
+                if int(parts[1])==1 and not first:
+                    if EDIFF >= totalenergydiffs[-1]:
+                        eleconvergency = True
+                    else:
+                        eleconvergency = False
+                    doc = {
+                        'TotalEnergy': energys,
+                        'TotalEnergyDiff': totalenergydiffs,
+                        'EleConvergency': eleconvergency
+                    }
+                    electronicSteps.append(doc)
+                    energys=[]
+                    totalenergydiffs = []
+                energy = float(parts[2])
+                energys.append(energy)
+                totalenergydiffs.append(float(parts[3]))
+                first = False
+
+        if EDIFF >= totalenergydiffs[-1]:
+            eleconvergency = True
+        else:
+            eleconvergency = False
+
+        doc = {
+            'TotalEnergy': energys,
+            'TotalEnergyDiff': totalenergydiffs,
+            'EleConvergency': eleconvergency
+        }
+        electronicSteps.append(doc)
+
+        return electronicSteps

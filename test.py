@@ -158,7 +158,6 @@ class TestEigenval(unittest.TestCase):
 
     @patch("builtins.open", new_callable=mock_open, read_data="")
     def test_empty_file(self, mock_file):
-
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             eigenval = Eigenval("fakefile")

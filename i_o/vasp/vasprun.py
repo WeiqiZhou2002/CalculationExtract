@@ -605,3 +605,48 @@ class Vasprun:
             "KPoints": KPoints,
             "Data": Data  # usually big
         }
+
+    def getElectronicSteps(self):
+        electronicSteps = []
+        for child in self.root:
+            if child.tag == 'calculation':
+                energys = []
+                cputimes = []
+                totalenergydiffs = []
+                for child2 in child:
+                    if child2.tag == 'scstep':
+                        for child3 in child2:
+                            if child3.attrib == {'name': 'total'}:
+                                times = child3.text.split()
+                                if len(times) == 1:
+                                    times = times[0]
+                                    times = [times[: times.find('.') + 3], times[times.find('.') + 3:]]
+                                if '*' in times[1]:
+                                    cputime = 'NAN'
+                                else:
+                                    cputime = float(times[1])
+                                cputimes.append(cputime)
+                            if child3.tag == 'energy':
+                                for child4 in child3:
+                                    if child4.attrib == {'name': 'e_fr_energy'}:
+                                        energy = float(child4.text)
+                                        energys.append(energy)
+
+                energy_pre = 0.0
+                for energy in energys:
+                    totalenergydiffs.append(energy - energy_pre)
+                    energy_pre = energy
+
+                para = self.parameters['EDIFF']
+                if para >= totalenergydiffs[-1]:
+                    eleconvergency = True
+                else:
+                    eleconvergency = False
+                doc = {
+                    'TotalEnergy': energys,
+                    'EleStepCpuTime': cputimes,
+                    'TotalEnergyDiff': totalenergydiffs,
+                    'EleConvergency': eleconvergency
+                }
+                electronicSteps.append(doc)
+        return electronicSteps

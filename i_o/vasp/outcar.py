@@ -201,3 +201,15 @@ class Outcar:
             'AnisotropyIndex': A
         }
         return properties
+
+    def getEfermi(self):
+        """
+        Extract E-fermi value from the OUTCAR file.
+        """
+        for line in self.lines:
+            if 'E-fermi' in line:
+                parts = line.split()
+                efermi_index = parts.index('E-fermi') + 2
+                efermi_value = float(parts[efermi_index])
+                return efermi_value
+        return None

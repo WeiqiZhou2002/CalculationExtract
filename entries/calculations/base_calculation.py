@@ -70,54 +70,15 @@ class BaseCalculation(ABC):
         else:
             self.oszicarParser = None
 
-
-
     def getElectronicSteps(self):
-        electronicSteps = []
-        if self.vasprunParser is None:
-            return electronicSteps
-        for child in self.vasprunParser.root:
-            if child.tag == 'calculation':
-                energys = []
-                cputimes = []
-                totalenergydiffs = []
-                for child2 in child:
-                    if child2.tag == 'scstep':
-                        for child3 in child2:
-                            if child3.attrib == {'name': 'total'}:
-                                times = child3.text.split()
-                                if len(times) == 1:
-                                    times = times[0]
-                                    times = [times[: times.find('.') + 3], times[times.find('.') + 3:]]
-                                if '*' in times[1]:
-                                    cputime = 'NAN'
-                                else:
-                                    cputime = float(times[1])
-                                cputimes.append(cputime)
-                            if child3.tag == 'energy':
-                                for child4 in child3:
-                                    if child4.attrib == {'name': 'e_fr_energy'}:
-                                        energy = float(child4.text)
-                                        energys.append(energy)
-
-                energy_pre = 0.0
-                for energy in energys:
-                    totalenergydiffs.append(energy - energy_pre)
-                    energy_pre = energy
-
-                para = self.parm['EDIFF']
-                if para >= totalenergydiffs[-1]:
-                    eleconvergency = True
-                else:
-                    eleconvergency = False
-                doc = {
-                    'TotalEnergy': energys,
-                    'EleStepCpuTime': cputimes,
-                    'TotalEnergyDiff': totalenergydiffs,
-                    'EleConvergency': eleconvergency
-                }
-                electronicSteps.append(doc)
-        return electronicSteps
+        if self.vasprunParser is not None:
+            return self.vasprunParser.getElectronicSteps()
+        if 'oszicar' in self.file_parser:
+            para = self.parm['EDIFF']
+            steps = self.file_parser['oszicar'].getElectronicSteps(para)
+            return steps
+        else:
+            return {}
 
     def getThermoDynamicProperties(self):
         if self.vasprunParser is None:
@@ -128,11 +89,15 @@ class BaseCalculation(ABC):
                 'FormationEnergy': 'N/A'
             }
             return doc
+        fermienergy = 0
         child = self.vasprunParser.root.find("./calculation[last()]/energy/i[@name='e_fr_energy']")
         totalenergy = float(child.text)
-        child = self.vasprunParser.root.find("./calculation[last()]/dos/i[@name='efermi']")
         numberofatoms = int(self.vasprunParser.root.find("./atominfo/atoms").text)
-        fermienergy = float(child.text)
+        if self.vasprunParser is not None:
+            child = self.vasprunParser.root.find("./calculation[last()]/dos/i[@name='efermi']")
+            fermienergy = float(child.text)
+        elif 'outcar' in self.file_parser:
+            fermienergy = self.file_parser['outcar'].getEfermi()
         energyPerAtom = totalenergy / numberofatoms
         formation_energy = 0.0
         composition = self.vasprunParser.composition
