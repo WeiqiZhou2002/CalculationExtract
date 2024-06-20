@@ -32,7 +32,10 @@ class Incar:
                     key = line[0].strip(' ')
                     value = line[1].split('#')[0].strip(' ').strip('\n')
                     try:
-                        value=float(value) if '.' in value else int(value)
+                        if 'E' in value:
+                            value = float(value)
+                        else:
+                            value=float(value) if '.' in value else int(value)
                     except ValueError:
                         pass
                     self.dict[key] = value

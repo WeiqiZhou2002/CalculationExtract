@@ -145,6 +145,21 @@ class Vasprun:
         return parameters_dict
 
     def getCalType(self):
+
+        name = self.filename.lower()
+        if 'static' in name:
+            return CalType.StaticCalculation
+        elif 'dos' in name or 'density' in name:
+            return CalType.DensityOfStates
+        elif 'geometry' in name or 'scf' in name or 'optim' in name:
+            return CalType.GeometryOptimization
+        elif 'band' in name:
+            return CalType.BandStructure
+        elif 'elastic' in name:
+            return CalType.ElasticProperties
+        elif 'dielectric' in name:
+            return CalType.DielectricProperties
+
         para_list = ['IBRION', 'LORBIT', 'LOPTICS', 'LEPSILON', 'LCALCEPS', 'ISIF', 'MAGMOM']
         parameters = self.findPara(para_list)
         if parameters['IBRION'] == 1 or parameters['IBRION'] == 2 or parameters['IBRION'] == 3:
@@ -246,12 +261,12 @@ class Vasprun:
             if child.attrib['param'] == 'listgenerated':
                 for child2 in child:
                     if child2.attrib == {'type': 'int', 'name': 'divisions'}:
-                        kpoints['KgridDivision'] = child2.text.strip()
+                        kpoints['KgridDivision'] = int(child2.text.strip())
                 HighsymPoints = []
                 for v in child.findall('v'):
                     HighsymPoints.append([float(i) for i in v.text.split()])
                 kpoints['HighsymPoints'] = HighsymPoints
-            parameters_dict['KpointsPath'] = kpoints
+            parameters_dict['Kpoints'] = kpoints
         else:
             if child.attrib['param'] == 'Gamma':
                 kpoints['GammaCentered'] = True
@@ -374,7 +389,6 @@ class Vasprun:
         child = self.root.find("./kpoints/varray[@name='kpointlist']")
         data = parseVarray(child)
         return data
-
 
     def getDielectricData(self):
         """

@@ -22,27 +22,33 @@ class Doscar:
         self.N = int(self.lines[5].split()[2])
         IsSpinPolarized = False
         self.energies = np.zeros(self.N)
-        self.total = None
+        self.total = {}
+        data1 = []
+        data2 = []
         for i in range(self.N):
             fields = np.array(self.lines[6 + i].split(), dtype=float)
             if i == 0:
                 if len(fields) == 3:  # energy, total
                     IsSpinPolarized = False
-                    self.total = np.zeros((1, self.N))
+                    data1=[]
+                    data2=[]
                 else:  # energy, spin-up, spin-down
                     IsSpinPolarized = True
-                    self.total = np.zeros((2, self.N))
+                    data1 = []
             self.energies[i] = fields[0]
             if IsSpinPolarized:
-                self.total[0, i] = fields[1]
-                self.total[1, i] = fields[2]
+                data1.append(fields[1])
+                data2.append(fields[2])
             else:
-                self.total[0, i] = fields[1]
+                data1.append(fields[1])
+        self.total['0']=list(data1)
+        if IsSpinPolarized:
+            self.total['1']=list(data2)
         return {
             "IsSpinPolarized": IsSpinPolarized,
             "NumberOfGridPoints": self.N,
             "Energies": self.energies.tolist(),
-            "TdosData": self.total.tolist()
+            "TdosData": self.total
         }
 
     def getPartialDos(self):

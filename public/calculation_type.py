@@ -50,7 +50,6 @@ class CalType(enumerate):
             return CalType.StaticCalculation
         if (parameters['IBRION'] == 5 or parameters['IBRION'] == 6) and parameters['ISIF'] >= 3:
             return CalType.ElasticProperties
-
-        if 'MAGMOM' in parameters.keys():
+        if parameters['MAGMOM'] is None:
             return CalType.MagneticProperties
         raise ValueError('无法判断提取类型，无法提取')

@@ -26,14 +26,22 @@ class BaseCalculation(ABC):
             self.outcarParser = file_parsers['outcar']
         else:
             self.outcarParser = None
+        self.parm = {}
+        if 'vasprun' in file_parsers and 'incar' in file_parsers:
+            self.parm = file_parsers['vasprun'].parameters
+            self.parm= file_parsers['incar'].fill_parameters(self.parm)
+        elif 'vasprun' in file_parsers:
+            self.parm = file_parsers['vasprun'].parameters
+        elif 'incar' in file_parsers:
+            self.parm = file_parsers['incar'].fill_parameters(self.parm)
+        if 'kpoints' in file_parsers and 'Kpoints' not in self.parm:
+            self.parm['kpoints'] = file_parsers['kpoints'].getKpoints()
         if 'vasprun' in file_parsers:
             self.vasprunParser = file_parsers['vasprun']
             self.vasprunParser.setup()
             self.input_structure = self.vasprunParser.input_structure
             self.output_structure = self.vasprunParser.output_structure
-            self.parm = self.vasprunParser.parameters
-            if 'incar' in file_parsers:
-                self.parm = file_parsers['incar'].fill_parameters(self.parm)
+
             self.basicDoc = {
                 'InputStructure': self.input_structure.to_bson(),
                 'OutputStructure': self.output_structure.to_bson(),
@@ -44,13 +52,11 @@ class BaseCalculation(ABC):
                 'ProcessData': {},
                 'Properties': {},
                 'Files': [],
-                'CalculationType': self.vasprunParser.calculationType
+                'CalculationType': self.vasprunParser.calculationType,
             }
-            self.parm = self.vasprunParser.parameters
         elif 'poscar' in file_parsers and 'incar' in file_parsers:
             self.poscarParser = file_parsers['poscar']
             self.poscarParser.setup()
-            self.parm = file_parsers['incar'].fill_parameters(self.parm)
             self.input_structure = self.poscarParser.structure
             self.basicDoc = {
                 'InputStructure': self.input_structure.to_bson(),
