@@ -9,9 +9,6 @@
 @Description: 
 """
 from abc import ABC, abstractmethod
-from public.tools.Electronic import Spin
-from public.tools.helper import parseVarray
-import numpy as np
 
 from public.tools.periodic_table import PTable
 

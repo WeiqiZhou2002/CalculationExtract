@@ -43,12 +43,10 @@ class Oszicar:
         energys = []
         totalenergydiffs = []
         first = True
-
-
         for line in self.lines:
             if line.startswith('DAV') or line.startswith('DIA'):
                 parts = re.split(r'\s+', line.strip())
-                if int(parts[1])==1 and not first:
+                if int(parts[1]) == 1 and not first:
                     if EDIFF >= totalenergydiffs[-1]:
                         eleconvergency = True
                     else:
@@ -59,7 +57,7 @@ class Oszicar:
                         'EleConvergency': eleconvergency
                     }
                     electronicSteps.append(doc)
-                    energys=[]
+                    energys = []
                     totalenergydiffs = []
                 energy = float(parts[2])
                 energys.append(energy)
@@ -79,3 +77,18 @@ class Oszicar:
         electronicSteps.append(doc)
 
         return electronicSteps
+
+    def getIonicSteps(self):
+        ionSteps = {}
+        energies = []
+        totalenergydiffs = []
+        for line in self.lines:
+            if re.match(r'^\s*\d+\s+F', line):
+                parts = re.split(r'\s+|=', line.strip())
+                total_energy = float(parts[3])  # Extracting value after 'F='
+                energy_diff = float(parts[10])  # Extracting value after 'dE='
+                energies.append(total_energy)
+                totalenergydiffs.append(energy_diff)
+        ionSteps['TotalEnergy'] = energies
+        ionSteps['TotalEnergyDiff'] = totalenergydiffs
+        return ionSteps
