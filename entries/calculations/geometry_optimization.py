@@ -22,12 +22,23 @@ class GeometryOptimization(BaseCalculation):
 
 
     def getIonicSteps(self):
+        ionic_steps_vasprun = None
+        ionic_steps_oszicar = None
         if self.vasprunParser is not None:
-            return self.vasprunParser.getIonicSteps()
-        elif 'oszicar' in self.file_parser:
-            return self.file_parser['oszicar'].getIonicSteps()
-        else:
-            return {}
+            ionic_steps_vasprun =  self.vasprunParser.getIonicSteps()
+        if 'oszicar' in self.file_parser:
+            ionic_steps_oszicar = self.file_parser['oszicar'].getIonicSteps()
+        if ionic_steps_vasprun is not None and ionic_steps_oszicar is not None:
+            if not self.compare_with_tolerance(ionic_steps_vasprun, ionic_steps_oszicar):
+                # Handle the case where the results do not match within tolerance
+                print("Warning: Mismatch between vasprun and oszicar ionic steps beyond tolerance.")
+                print(self.vasprunParser.filename)
+                return {
+                    "vasprun": ionic_steps_vasprun,
+                    "oszicar": ionic_steps_oszicar
+                }
+        return ionic_steps_vasprun if ionic_steps_vasprun is not None else (
+            ionic_steps_oszicar if ionic_steps_oszicar is not None else {})
 
     def getGapFromBand(self):
         """

@@ -74,14 +74,24 @@ class BaseCalculation(ABC):
             self.oszicarParser = None
 
     def getElectronicSteps(self):
+        ele_vasprun = None
+        para = self.parm['EDIFF']
+        ele_oszicar = None
         if self.vasprunParser is not None:
-            return self.vasprunParser.getElectronicSteps()
+            ele_vasprun = self.vasprunParser.getElectronicSteps()
         if 'oszicar' in self.file_parser:
-            para = self.parm['EDIFF']
-            steps = self.file_parser['oszicar'].getElectronicSteps(para)
-            return steps
-        else:
-            return {}
+            ele_oszicar = self.file_parser['oszicar'].getElectronicSteps(para)
+        if ele_vasprun is not None and ele_oszicar is not None:
+            if not self.compare_with_tolerance(ele_vasprun, ele_oszicar):
+                # Handle the case where the results do not match within tolerance
+                print("Warning: Mismatch between vasprun and oszicar ionic steps beyond tolerance.")
+                print(self.vasprunParser.filename)
+                return {
+                    "vasprun": ele_vasprun,
+                    "oszicar": ele_oszicar
+                }
+        return ele_vasprun if ele_vasprun is not None else (
+            ele_oszicar if ele_oszicar is not None else {})
 
     def getThermoDynamicProperties(self):
         if self.vasprunParser is None:
@@ -122,6 +132,51 @@ class BaseCalculation(ABC):
         }
         return doc
 
+    def compare_with_tolerance(self, value1, value2, tolerance=0.01):
+        if isinstance(value1, dict) and isinstance(value2, dict):
+            return self.compare_dicts_with_tolerance(value1, value2, tolerance)
+        elif isinstance(value1, list) and isinstance(value2, list):
+            return self.compare_lists_with_tolerance(value1, value2, tolerance)
+        elif isinstance(value1, (int, float)) and isinstance(value2, (int, float)):
+            return abs(value1 - value2) <= tolerance
+        else:
+            return value1 == value2
+
+    def compare_dicts_with_tolerance(self, dict1, dict2, tolerance=0.01):
+        common_keys = set(dict1.keys()).intersection(set(dict2.keys()))
+
+        for key in common_keys:
+            value1, value2 = dict1[key], dict2[key]
+            if isinstance(value1, dict) and isinstance(value2, dict):
+                if not self.compare_dicts_with_tolerance(value1, value2, tolerance):
+                    return False
+            elif isinstance(value1, list) and isinstance(value2, list):
+                return self.compare_lists_with_tolerance(value1, value2, tolerance)
+            elif isinstance(value1, (int, float)) and isinstance(value2, (int, float)):
+                if abs(value1 - value2) > tolerance:
+                    return False
+            else:
+                if value1 != value2:
+                    return False
+
+        return True
+
+    def compare_lists_with_tolerance(self, list1, list2, tolerance=0.01):
+        if len(list1) != len(list2):
+            return False
+
+        for item1, item2 in zip(list1, list2):
+            if isinstance(item1, dict) and isinstance(item2, dict):
+                if not self.compare_dicts_with_tolerance(item1, item2, tolerance):
+                    return False
+            elif isinstance(item1, (int, float)) and isinstance(item2, (int, float)):
+                if abs(item1 - item2) > tolerance:
+                    return False
+            else:
+                if item1 != item2:
+                    return False
+
+        return True
     @abstractmethod
     def to_bson(self):
         pass
