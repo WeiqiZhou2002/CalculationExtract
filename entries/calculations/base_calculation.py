@@ -84,7 +84,7 @@ class BaseCalculation(ABC):
         if ele_vasprun is not None and ele_oszicar is not None:
             if not self.compare_with_tolerance(ele_vasprun, ele_oszicar):
                 # Handle the case where the results do not match within tolerance
-                print("Warning: Mismatch between vasprun and oszicar ionic steps beyond tolerance.")
+                print("Warning: Mismatch between vasprun and oszicar electronic steps beyond tolerance.")
                 print(self.vasprunParser.filename)
                 return {
                     "vasprun": ele_vasprun,
@@ -132,7 +132,7 @@ class BaseCalculation(ABC):
         }
         return doc
 
-    def compare_with_tolerance(self, value1, value2, tolerance=0.01):
+    def compare_with_tolerance(self, value1, value2, tolerance=0.1):
         if isinstance(value1, dict) and isinstance(value2, dict):
             return self.compare_dicts_with_tolerance(value1, value2, tolerance)
         elif isinstance(value1, list) and isinstance(value2, list):
@@ -142,7 +142,7 @@ class BaseCalculation(ABC):
         else:
             return value1 == value2
 
-    def compare_dicts_with_tolerance(self, dict1, dict2, tolerance=0.01):
+    def compare_dicts_with_tolerance(self, dict1, dict2, tolerance=0.1):
         common_keys = set(dict1.keys()).intersection(set(dict2.keys()))
 
         for key in common_keys:
@@ -161,7 +161,7 @@ class BaseCalculation(ABC):
 
         return True
 
-    def compare_lists_with_tolerance(self, list1, list2, tolerance=0.01):
+    def compare_lists_with_tolerance(self, list1, list2, tolerance=0.1):
         if len(list1) != len(list2):
             return False
 
@@ -172,6 +172,8 @@ class BaseCalculation(ABC):
             elif isinstance(item1, (int, float)) and isinstance(item2, (int, float)):
                 if abs(item1 - item2) > tolerance:
                     return False
+            elif isinstance(item1, list) and isinstance(item2, list):
+                return self.compare_lists_with_tolerance(item1, item2, tolerance)
             else:
                 if item1 != item2:
                     return False

@@ -163,22 +163,55 @@ class BandStructure(BaseCalculation):
             }
 
     def getEigenData(self):
+        eigen_vasprun = None
+        eigen_eigen = None
+        eigen_procar = None
         if self.vasprunParser is not None:
-            return self.vasprunParser.getEigenValues()
-        elif 'eigenval' in self.file_parser:
-            return self.file_parser['eigenval'].getEigenValues()
-        elif 'procar' in self.file_parser:
-            return self.file_parser['procar'].getEigenValues()
-        else:
-            return {}
+            eigen_vasprun =  self.vasprunParser.getEigenValues()
+        if 'eigenval' in self.file_parser:
+            eigen_eigen =  self.file_parser['eigenval'].getEigenValues()
+        if 'procar' in self.file_parser:
+            eigen_procar =  self.file_parser['procar'].getEigenValues()
+        if eigen_vasprun is not None and eigen_eigen is not None:
+            if not self.compare_with_tolerance(eigen_vasprun, eigen_eigen):
+                # Handle the case where the results do not match within tolerance
+                print("Warning: Mismatch between vasprun and eigenval eigenval beyond tolerance.")
+                print(self.vasprunParser.filename)
+                return {
+                    "vasprun": eigen_vasprun,
+                    "eigenval": eigen_eigen
+                }
+        if eigen_vasprun is not None and eigen_procar is not None:
+            if not self.compare_with_tolerance(eigen_vasprun, eigen_procar):
+                # Handle the case where the results do not match within tolerance
+                print("Warning: Mismatch between vasprun and procar eigenval beyond tolerance.")
+                print(self.vasprunParser.filename)
+                return {
+                    "vasprun": eigen_vasprun,
+                    "procar": eigen_procar
+                }
+        return eigen_vasprun if eigen_vasprun is not None else (
+                eigen_eigen if eigen_eigen is not None else (
+                eigen_procar if eigen_procar is not None else {}))
 
     def getProjectedEigenvalOnIonOrbitals(self):
+        projected_vasprun = None
+        projected_procar = None
         if self.vasprunParser is not None:
-            return self.vasprunParser.getProjectedEigenvalOnIonOrbitals()
-        elif 'procar' in self.file_parser:
-            return self.file_parser['procar'].getProjectedEigenvalOnIonOrbitals()
-        else:
-            return {}
+            projected_vasprun = self.vasprunParser.getProjectedEigenvalOnIonOrbitals()
+        if 'procar' in self.file_parser:
+            projected_procar = self.file_parser['procar'].getProjectedEigenvalOnIonOrbitals()
+        if projected_vasprun is not None and projected_procar is not None:
+            if not self.compare_with_tolerance(projected_vasprun, projected_procar):
+                # Handle the case where the results do not match within tolerance
+                print("Warning: Mismatch between vasprun and procar projected eigenval on Ion orbitals beyond tolerance.")
+                print(self.vasprunParser.filename)
+                return {
+                    "vasprun": projected_vasprun,
+                    "procar": projected_procar
+                }
+        return projected_vasprun if projected_vasprun is not None else (
+            projected_procar if projected_procar is not None else {})
 
     def to_bson(self):
         doc = self.basicDoc

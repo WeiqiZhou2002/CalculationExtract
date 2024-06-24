@@ -44,7 +44,7 @@ class Oszicar:
         totalenergydiffs = []
         first = True
         for line in self.lines:
-            if line.startswith('DAV') or line.startswith('DIA'):
+            if re.match(r'^[A-Za-z]{3}', line):
                 parts = re.split(r'\s+', line.strip())
                 if int(parts[1]) == 1 and not first:
                     if EDIFF >= totalenergydiffs[-1]:

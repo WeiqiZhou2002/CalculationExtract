@@ -21,20 +21,44 @@ class DensityOfStates(BaseCalculation):
         super().__init__(file_parsers)
 
     def getTotalDos(self):
+        totaldos_vasprun = None
+        totaldos_procar = None
         if self.vasprunParser is not None:
-            return self.vasprunParser.getTotalDos()
-        elif 'doscar' in self.file_parser:
-            return self.file_parser['doscar'].getTotalDos()
-        else:
-            return {}
+            totaldos_vasprun = self.vasprunParser.getTotalDos()
+        if 'procar' in self.file_parser:
+            totaldos_procar = self.file_parser['doscar'].getTotalDos()
+        if totaldos_vasprun is not None and totaldos_procar is not None:
+            if not self.compare_with_tolerance(totaldos_vasprun, totaldos_procar):
+                # Handle the case where the results do not match within tolerance
+                print(
+                    "Warning: Mismatch between vasprun and doscar total dos beyond tolerance.")
+                print(self.vasprunParser.filename)
+                return {
+                    "vasprun": totaldos_vasprun,
+                    "doscar": totaldos_procar
+                }
+        return totaldos_vasprun if totaldos_vasprun is not None else (
+            totaldos_procar if totaldos_procar is not None else {})
 
     def getPartialDos(self):
+        partialdos_vasprun = None
+        partialdos_procar = None
         if self.vasprunParser is not None:
-            return self.vasprunParser.getPartialDos()
-        elif 'doscar' in self.file_parser:
-            return self.file_parser['doscar'].getPartialDos()
-        else:
-            return {}
+            partialdos_vasprun = self.vasprunParser.getTotalDos()
+        if 'procar' in self.file_parser:
+            partialdos_procar = self.file_parser['doscar'].getTotalDos()
+        if partialdos_vasprun is not None and partialdos_procar is not None:
+            if not self.compare_with_tolerance(partialdos_vasprun, partialdos_procar):
+                # Handle the case where the results do not match within tolerance
+                print(
+                    "Warning: Mismatch between vasprun and doscar partial dos beyond tolerance.")
+                print(self.vasprunParser.filename)
+                return {
+                    "vasprun": partialdos_vasprun,
+                    "doscar": partialdos_procar
+                }
+        return partialdos_vasprun if partialdos_vasprun is not None else (
+            partialdos_procar if partialdos_procar is not None else {})
 
 
 
