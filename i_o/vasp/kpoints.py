@@ -36,8 +36,8 @@ class Kpoints:
             gamma_centered = False
             if "Gamma" in self.lines[2] or "G" in self.lines[2]:
                 gamma_centered = True
-            kgrid_division = list(map(int, self.lines[3].strip().split()))
-            meshshift = list(map(int, self.lines[4].strip().split()))
+            kgrid_division = list(map(float, self.lines[3].strip().split()))
+            meshshift = list(map(float, self.lines[4].strip().split()))
             return {
                 "GammaCentered": gamma_centered,
                 "KgridDivision": kgrid_division,

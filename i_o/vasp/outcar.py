@@ -37,25 +37,32 @@ class Outcar:
             line = line.strip('\n').strip(' ')
             if line.find('running on') != -1:
                 line2 = line.split()
-                resourceUsage['TotalCores'] = int(line2[2])
+                if "N/A" not in line2:
+                    resourceUsage['TotalCores'] = int(line2[2])
             if line.find('Total CPU time used (sec):') != -1:
                 line2 = line.split(':')
-                resourceUsage['TotalCpuTime'] = float(line2[1])
+                if "N/A" not in line2:
+                    resourceUsage['TotalCpuTime'] = float(line2[1])
             elif line.find('User time (sec):') != -1:
                 line2 = line.split(':')
-                resourceUsage['UserTime'] = float(line2[1])
+                if "N/A" not in line2:
+                    resourceUsage['UserTime'] = float(line2[1])
             elif line.find('System time (sec):') != -1:
                 line2 = line.split(':')
-                resourceUsage['SystemTime'] = float(line2[1])
+                if "N/A" not in line2:
+                    resourceUsage['SystemTime'] = float(line2[1])
             elif line.find('Elapsed time (sec):') != -1:
                 line2 = line.split(':')
-                resourceUsage['ElapsedTime'] = float(line2[1])
+                if "N/A" not in line2:
+                    resourceUsage['ElapsedTime'] = float(line2[1])
             elif line.find('Maximum memory used (kb):') != -1:
                 line2 = line.split(':')
-                resourceUsage['MaxMemory'] = float(line2[1])
+                if line2[1].strip() != 'N/A':
+                    resourceUsage['MaxMemory'] = float(line2[1])
             elif line.find('Average memory used (kb):') != -1:
                 line2 = line.split(':')
-                resourceUsage['AverageMemory'] = float(line2[1])
+                if line2[1].strip() != 'N/A':
+                    resourceUsage['AverageMemory'] = float(line2[1])
         return resourceUsage
 
     def getAtomicChargeAndAtomicMagnetization(self):
