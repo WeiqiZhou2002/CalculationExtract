@@ -143,6 +143,7 @@ def vasp_extract(root_path: str, log):
         bson = cal_entry.to_bson()
         # 保存到数据库
         size = get_deep_size(bson)
+        print(size)
         if size<16*1024*1024:
             id = mongo.save_one(bson, database, cal_type)
         else:
