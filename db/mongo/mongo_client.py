@@ -18,9 +18,12 @@ class Mongo:
         self.client = MongoClient(host=host, port=port)
 
     def save_one(self, data, db, collection):
-        conn = self.client[db][collection]
-        object_id = conn.insert_one(data).inserted_id
-        return object_id
+        try:
+            conn = self.client[db][collection]
+            object_id = conn.insert_one(data).inserted_id
+            return object_id
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
     def save_many(self, data, db, collection):
         conn = self.client[db][collection]

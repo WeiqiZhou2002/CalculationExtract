@@ -94,7 +94,78 @@ def vasp_extract(root_path: str, log):
         # 遍历文件夹，获取所有的vasp计算文件
         # 根据文件名创建 解析类，对文件进行解析
         # 保存在字典格式中 {'incar': Incar(), 'poscar': Poscar(), 'outcar': Outcar(), 'locpot': Locpot()}
-
+        # try:
+        #     file_parsers = {}
+        # # 遍历目录中所有文件
+        #     for file_name in os.listdir(file):
+        #         full_path = os.path.join(file, file_name)
+        #         if file_name.upper() == 'INCAR':
+        #             file_parsers['incar'] = Incar(full_path)
+        #         elif file_name.upper() == 'POSCAR':
+        #             file_parsers['poscar'] = Poscar(full_path)
+        #         elif file_name.upper() == 'OUTCAR':
+        #             file_parsers['outcar'] = Outcar(full_path)
+        #         elif file_name.upper() == 'LOCPOT':
+        #             file_parsers['locpot'] = Locpot(full_path)
+        #         elif file_name.lower() == 'vasprun.xml':
+        #             file_parsers['vasprun'] = Vasprun(full_path)
+        #         elif file_name.upper() == 'KPOINTS':
+        #             file_parsers['kpoints'] = Kpoints(full_path)
+        #         elif file_name.upper() == 'OSZICAR':
+        #             file_parsers['oszicar'] = Oszicar(full_path)
+        #         elif file_name.upper() == 'XDATCAR':
+        #             file_parsers['xdatcar'] = Xdatcar(full_path)
+        #         elif file_name.upper() == 'DOSCAR':
+        #             file_parsers['doscar'] = Doscar(full_path)
+        #         elif file_name.upper() == 'PROCAR':
+        #             file_parsers['procar'] = Procar(full_path)
+        #         elif file_name.upper() == 'ELFCAR':
+        #             file_parsers['elfcar'] = Elfcar(full_path)
+        #         elif file_name.upper() == 'CHGCAR':
+        #             file_parsers['chgcar'] = Chgcar(full_path)
+        #         elif file_name.upper() == 'EIGENVAL':
+        #             file_parsers['eigenval'] = Eigenval(full_path)
+        #      # 从名字或Incar 和 Vasprun对象中获取计算类型，优先名字
+        #     parm = {}
+        #     if 'vasprun' in file_parsers and 'incar' in file_parsers:
+        #         parm = file_parsers['vasprun'].parameters
+        #         parm = file_parsers['incar'].fill_parameters(parm)
+        #     elif 'vasprun' in file_parsers:
+        #         parm = file_parsers['vasprun'].parameters
+        #     elif 'incar' in file_parsers:
+        #         parm = file_parsers['incar'].fill_parameters(parm)
+        #     else:
+        #         raise ValueError(
+        #         f"INCAR or vasprun.xml file is required to determine the calculation type in directory {file}")
+        #     cal_type = CalType.from_parameters(file, collections, parm)
+        #     # 根据计算类型创建计算对象
+        #     cal_entry = CalculateEntries[cal_type](file_parsers)
+        #     bson = cal_entry.to_bson()
+        #     # 保存到数据库
+        #     size = get_deep_size(bson)
+        #     if size<16*1024*1024:
+        #         id = mongo.save_one(bson, database, cal_type)
+        #     else:
+        #         if 'Properties' in bson:
+        #             properties = bson['Properties']
+        #             file_id = mongo.save_large(properties,database)
+        #             bson['Properties']=file_id
+        #         id = mongo.save_one(bson, database, cal_type)
+        # except ValueError as e:
+        #     print(file, ' ', e, file=outFile)
+        #     print(file, ' ', e)
+        #     error_files['error'].append(file)
+        #     continue
+        # except KeyError as e:
+        #     print(file, ' ', e, file=outFile)
+        #     print(file, ' ', e)
+        #     error_files['error'].append(file)
+        #     continue
+        # except Exception as e:
+        #     error_files['error'].append(file)
+        #     print(file, ' ', e)
+        #     print(file, ' ', e, file=outFile)
+        #     continue
         file_parsers = {}
         # 遍历目录中所有文件
         for file_name in os.listdir(file):
@@ -143,7 +214,6 @@ def vasp_extract(root_path: str, log):
         bson = cal_entry.to_bson()
         # 保存到数据库
         size = get_deep_size(bson)
-        print(size)
         if size<16*1024*1024:
             id = mongo.save_one(bson, database, cal_type)
         else:

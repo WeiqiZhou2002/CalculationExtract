@@ -27,15 +27,14 @@ class Incar:
         with open(self.filename, 'r') as f:
             self.lines = f.readlines()
             for line in self.lines:
+                if line.startswith('!'):
+                    line = line[1:].strip()
                 if '=' in line:
-                    line = line.split('=')
-                    key = line[0].strip(' ')
-                    value = line[1].split('#')[0].strip(' ').strip('\n')
+                    key, value = line.split('=', 1)
+                    key = key.strip()
+                    value = value.split('#')[0].split('!')[0].strip()
                     try:
-                        if 'E' in value:
-                            value = float(value)
-                        else:
-                            value=float(value) if '.' in value else int(value)
+                        value = float(value) if 'E' in value or '.' or 'e' in value else int(value)
                     except ValueError:
                         pass
                     self.dict[key] = value

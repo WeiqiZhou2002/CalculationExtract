@@ -33,9 +33,15 @@ class Oszicar:
         LinearMagneticMoment = 0.
         for line in self.lines:
             line = line.strip('\n').strip(' ')
-            if line.find('mag=') != -1:
-                line2 = line.split('=')
-                LinearMagneticMoment = float(line2[-1])
+            if 'mag=' in line:
+                # 找到 mag= 的位置
+                start_index = line.find('mag=') + len('mag=')
+                # 提取紧随其后的值
+                values_str = line[start_index:].strip()
+                values = values_str.split()
+                if values:
+                    LinearMagneticMoment = float(values[0])
+                    break  # 只需要提取第一个 mag 值
         return LinearMagneticMoment
 
     def getElectronicSteps(self, EDIFF):

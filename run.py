@@ -16,7 +16,7 @@ from user_view import vasp_extract
 def getArgument():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--source', default='vasp', help='data source: vasp, icsd, oqmd, materialproject, etc.')
-    parser.add_argument('--root_dir', default='../md1', help='calculation files root path')
+    parser.add_argument('--root_dir', default='../test_data/band', help='calculation files root path')
     parser.add_argument('--log',action='store_true', default=False, help='if start log ')
     args = parser.parse_args()
     return args
