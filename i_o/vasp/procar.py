@@ -32,6 +32,7 @@ class Procar:
         EigenvalOcc = []
         spin_index = 0
         fields = []
+        fieldsDone = False
         done = False
         data = []
         spin = None
@@ -47,7 +48,6 @@ class Procar:
                 nbands = int(parts[7])
                 nions = int(parts[11])
                 if spin_index == 0:
-
                     KPoints = [[0.0, 0.0, 0.0] for _ in range(nkpoints)]
                 spin_index += 1
                 spin_index %= 2
@@ -59,7 +59,7 @@ class Procar:
                     eigenvaluesData.append(eigenvalues)
                 occupancy = [[] for _ in range(nkpoints)]
                 eigenvalues = [[] for _ in range(nkpoints)]
-                spin=[[] for _ in range(nkpoints)]
+                spin = [[] for _ in range(nkpoints)]
             elif line.startswith("k-point"):
                 parts = line.split()
                 current_kpoint = int(parts[1]) - 1
@@ -71,7 +71,10 @@ class Procar:
                 eigenval_occ = float(parts[7])
                 eigenvalues[current_kpoint].append(eigenval_data)
                 occupancy[current_kpoint].append(eigenval_occ)
-            elif line.startswith("ion") and done:
+                done = False
+            elif line.startswith("tot"):
+                done = True
+            elif line.startswith("ion") and fieldsDone and not done:
                 band = []
                 for j in range(nions):
                     irons = []
@@ -80,23 +83,25 @@ class Procar:
                         irons.append(float(num))
                     band.append(irons)
                 spin[current_kpoint].append(band)
-            elif line.startswith("ion") and not done:
+                done = True
+            elif line.startswith("ion") and not fieldsDone:
                 parts = line.split()
                 for part in parts[1:-1]:
                     fields.append(part)
-                done = True
-                band=[]
+                fieldsDone = True
+                band = []
                 for j in range(nions):
                     irons = []
-                    curline = self.lines[i+j+1].strip().split()
+                    curline = self.lines[i + j + 1].strip().split()
                     for num in curline[1:-1]:
                         irons.append(float(num))
                     band.append(irons)
                 spin[current_kpoint].append(band)
+
+
         data.append(spin)
         EigenvalOcc.append(occupancy)
         eigenvaluesData.append(eigenvalues)
-
 
         self.nkpoints = nkpoints
         self.nbands = nbands

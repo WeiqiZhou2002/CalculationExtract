@@ -10,7 +10,7 @@
 """
 import sys
 import time
-import bson
+import json
 
 from db.mongo.mongo_client import Mongo
 from entries.calculations import CalculateEntries
@@ -73,7 +73,14 @@ def vasp_extract(root_path: str, log):
     group = input(f'please input source user group: (default: {user})')
     if group == '':
         group = user
-    file_list = findPaths(root_path)
+    path_list_file = os.path.join(root_path, 'path_list.json')
+    if os.path.exists(path_list_file):
+        with open(path_list_file, 'r', encoding='utf8') as f:
+            file_list = json.load(f)
+    else:
+        file_list = findPaths(root_path)
+        with open(path_list_file, 'w', encoding='utf8') as f:
+            json.dump(file_list, f)
     print('Files Dir：', root_path)
     print('Files Number：', len(file_list))
     print('User：', user)
@@ -88,7 +95,6 @@ def vasp_extract(root_path: str, log):
     else:
         outFile = sys.stdout
     # 找到所有的vasp计算文件夹
-    file_list = findPaths(root_path)
     mongo = Mongo(host=host, port=port)
     for file in tqdm(file_list, total=len(file_list)):
         # 遍历文件夹，获取所有的vasp计算文件
@@ -101,14 +107,29 @@ def vasp_extract(root_path: str, log):
         #         full_path = os.path.join(file, file_name)
         #         if file_name.upper() == 'INCAR':
         #             file_parsers['incar'] = Incar(full_path)
-        #         elif file_name.upper() == 'POSCAR':
+        #         elif file_name.lower() == 'vasprun.xml':
+        #             file_parsers['vasprun'] = Vasprun(full_path)
+        #      # 从名字或Incar 和 Vasprun对象中获取计算类型，优先名字
+        #     parm = {}
+        #     if 'vasprun' in file_parsers and 'incar' in file_parsers:
+        #         parm = file_parsers['vasprun'].parameters
+        #         parm = file_parsers['incar'].fill_parameters(parm)
+        #     elif 'vasprun' in file_parsers:
+        #         parm = file_parsers['vasprun'].parameters
+        #     elif 'incar' in file_parsers:
+        #         parm = file_parsers['incar'].fill_parameters(parm)
+        #     else:
+        #         raise ValueError(
+        #         f"INCAR or vasprun.xml file is required to determine the calculation type in directory {file}")
+        #     cal_type = CalType.from_parameters(file, collections, parm)
+        #     for file_name in os.listdir(file):
+        #         full_path = os.path.join(file, file_name)
+        #         if file_name.upper() == 'POSCAR':
         #             file_parsers['poscar'] = Poscar(full_path)
         #         elif file_name.upper() == 'OUTCAR':
         #             file_parsers['outcar'] = Outcar(full_path)
         #         elif file_name.upper() == 'LOCPOT':
         #             file_parsers['locpot'] = Locpot(full_path)
-        #         elif file_name.lower() == 'vasprun.xml':
-        #             file_parsers['vasprun'] = Vasprun(full_path)
         #         elif file_name.upper() == 'KPOINTS':
         #             file_parsers['kpoints'] = Kpoints(full_path)
         #         elif file_name.upper() == 'OSZICAR':
@@ -125,19 +146,6 @@ def vasp_extract(root_path: str, log):
         #             file_parsers['chgcar'] = Chgcar(full_path)
         #         elif file_name.upper() == 'EIGENVAL':
         #             file_parsers['eigenval'] = Eigenval(full_path)
-        #      # 从名字或Incar 和 Vasprun对象中获取计算类型，优先名字
-        #     parm = {}
-        #     if 'vasprun' in file_parsers and 'incar' in file_parsers:
-        #         parm = file_parsers['vasprun'].parameters
-        #         parm = file_parsers['incar'].fill_parameters(parm)
-        #     elif 'vasprun' in file_parsers:
-        #         parm = file_parsers['vasprun'].parameters
-        #     elif 'incar' in file_parsers:
-        #         parm = file_parsers['incar'].fill_parameters(parm)
-        #     else:
-        #         raise ValueError(
-        #         f"INCAR or vasprun.xml file is required to determine the calculation type in directory {file}")
-        #     cal_type = CalType.from_parameters(file, collections, parm)
         #     # 根据计算类型创建计算对象
         #     cal_entry = CalculateEntries[cal_type](file_parsers)
         #     bson = cal_entry.to_bson()
@@ -172,14 +180,29 @@ def vasp_extract(root_path: str, log):
             full_path = os.path.join(file, file_name)
             if file_name.upper() == 'INCAR':
                 file_parsers['incar'] = Incar(full_path)
-            elif file_name.upper() == 'POSCAR':
+            elif file_name.lower() == 'vasprun.xml':
+                file_parsers['vasprun'] = Vasprun(full_path)
+        # 从名字或Incar 和 Vasprun对象中获取计算类型，优先名字
+        parm = {}
+        if 'vasprun' in file_parsers and 'incar' in file_parsers:
+            parm = file_parsers['vasprun'].parameters
+            parm = file_parsers['incar'].fill_parameters(parm)
+        elif 'vasprun' in file_parsers:
+            parm = file_parsers['vasprun'].parameters
+        elif 'incar' in file_parsers:
+            parm = file_parsers['incar'].fill_parameters(parm)
+        else:
+            raise ValueError(
+                f"INCAR or vasprun.xml file is required to determine the calculation type in directory {file}")
+        cal_type = CalType.from_parameters(file, collections, parm)
+        for file_name in os.listdir(file):
+            full_path = os.path.join(file, file_name)
+            if file_name.upper() == 'POSCAR':
                 file_parsers['poscar'] = Poscar(full_path)
             elif file_name.upper() == 'OUTCAR':
                 file_parsers['outcar'] = Outcar(full_path)
             elif file_name.upper() == 'LOCPOT':
                 file_parsers['locpot'] = Locpot(full_path)
-            elif file_name.lower() == 'vasprun.xml':
-                file_parsers['vasprun'] = Vasprun(full_path)
             elif file_name.upper() == 'KPOINTS':
                 file_parsers['kpoints'] = Kpoints(full_path)
             elif file_name.upper() == 'OSZICAR':
@@ -196,19 +219,6 @@ def vasp_extract(root_path: str, log):
                 file_parsers['chgcar'] = Chgcar(full_path)
             elif file_name.upper() == 'EIGENVAL':
                 file_parsers['eigenval'] = Eigenval(full_path)
-        # 从名字或Incar 和 Vasprun对象中获取计算类型，优先名字
-        parm = {}
-        if 'vasprun' in file_parsers and 'incar' in file_parsers:
-            parm = file_parsers['vasprun'].parameters
-            parm = file_parsers['incar'].fill_parameters(parm)
-        elif 'vasprun' in file_parsers:
-            parm = file_parsers['vasprun'].parameters
-        elif 'incar' in file_parsers:
-            parm = file_parsers['incar'].fill_parameters(parm)
-        else:
-            raise ValueError(
-                f"INCAR or vasprun.xml file is required to determine the calculation type in directory {file}")
-        cal_type = CalType.from_parameters(file, collections, parm)
         # 根据计算类型创建计算对象
         cal_entry = CalculateEntries[cal_type](file_parsers)
         bson = cal_entry.to_bson()

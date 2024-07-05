@@ -51,6 +51,8 @@ class GeometryOptimization(BaseCalculation):
             eigenval = self.file_parser['eigenval'].getEigenValues()
         else:
             return {}
+        if not eigenval:
+            return {}
         isSpin = eigenval["IsSpinPolarized"]
         number = eigenval["NumberOfGeneratedKPoints"]
         BandsNum = eigenval["NumberOfBand"]

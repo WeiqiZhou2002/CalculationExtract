@@ -30,6 +30,8 @@ class Oszicar:
         TODO: 提取最后一个值还是所有值
         :return:
         """
+        if not self.lines:
+            return {}
         LinearMagneticMoment = 0.
         for line in self.lines:
             line = line.strip('\n').strip(' ')
@@ -45,6 +47,8 @@ class Oszicar:
         return LinearMagneticMoment
 
     def getElectronicSteps(self, EDIFF):
+        if not self.lines:
+            return {}
         electronicSteps = []
         energys = []
         totalenergydiffs = []
@@ -85,6 +89,8 @@ class Oszicar:
         return electronicSteps
 
     def getIonicSteps(self):
+        if not self.lines:
+            return {}
         ionSteps = {}
         energies = []
         totalenergydiffs = []
