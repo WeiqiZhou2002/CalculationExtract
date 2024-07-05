@@ -19,7 +19,7 @@ class Kpoints:
 
     def getKpoints(self):
         if 'line_mode' in self.lines[2].lower() or 'line-mode' in self.lines[2].lower():
-            kgrid_division = int(self.lines[1].strip())
+            kgrid_division = int(self.lines[1].strip().split(" ")[0])
 
             high_sym_points = []
             for line in self.lines[4:]:

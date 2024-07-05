@@ -62,6 +62,8 @@ class GeometryOptimization(BaseCalculation):
             efermi = eigenval["FermiEnergy"]
         elif 'outcar' in self.file_parser:
             efermi = self.file_parser['outcar'].getEfermi()
+        else:
+            return {}
         energies = []
         kpoints = []
         for t in Energies.values():

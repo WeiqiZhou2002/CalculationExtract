@@ -74,10 +74,13 @@ class Oszicar:
                 totalenergydiffs.append(float(parts[3]))
                 first = False
 
-        if EDIFF >= totalenergydiffs[-1]:
-            eleconvergency = True
+        if not totalenergydiffs:
+            return {}
         else:
-            eleconvergency = False
+            if EDIFF >= totalenergydiffs[-1]:
+                eleconvergency = True
+            else:
+                eleconvergency = False
 
         doc = {
             'TotalEnergy': energys,

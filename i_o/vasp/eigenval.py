@@ -26,7 +26,7 @@ class Eigenval:
         :return:
         """
 
-        if len(self.lines) < 5:
+        if len(self.lines) < 6:
             warnings.warn(f"File {self.filename} is too short to be a valid EIGENVAL file.")
             return {}
         self.isSpin = int(self.lines[0].split()[3])
@@ -40,8 +40,18 @@ class Eigenval:
         self.kpoints = [None] * self.n
         self.eigenvalues = None
         self.occupancies = None
-
+        NumberOfBand = self.nBands
+        IsSpinPolarized = (self.isSpin != 1)
         line_index = 6  # Start reading from the 7th line (index 6)
+        if len(self.lines) < 7:
+            return {
+                "NumberOfGeneratedKPoints": "N/A",
+                "NumberOfBand": NumberOfBand,
+                "IsSpinPolarized": IsSpinPolarized,
+                "KPoints": "N/A",
+                "EigenvalData": "N/A",
+                "EigenvalOcc": "N/A"
+            }
 
         if self.isSpin == 1:
             for i in range(self.n):
@@ -76,8 +86,7 @@ class Eigenval:
 
         self.EigenValues = EigenValues(self.kpoints, self.eigenvalues)
         NumberOfGeneratedKPoints = len(self.kpoints)
-        NumberOfBand = self.nBands
-        IsSpinPolarized = (self.isSpin != 1)
+
         KPoints = self.kpoints
         EigenvalData = {}
         EigenvalOcc = {}
