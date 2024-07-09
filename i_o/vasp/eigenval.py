@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 import numpy as np
 import warnings
-
+import re
 
 class KPoint:
     def __init__(self, name, coords):
@@ -56,7 +56,11 @@ class Eigenval:
         if self.isSpin == 1:
             for i in range(self.n):
                 line_index += 1  # Skip a line for k-point header
-                kpoint_coords = list(map(float, self.lines[line_index].split()[:3]))
+                line = self.lines[line_index].strip()
+                if re.match(r'^[0-9]+\.\s+kpoint:', line):
+                    kpoint_coords = list(map(float, line.split()[2:5]))
+                else:
+                    kpoint_coords = list(map(float, line.split()[:3]))
                 self.kpoints[i] = KPoint(str(i), kpoint_coords)
                 line_index += 1
                 if self.eigenvalues is None:

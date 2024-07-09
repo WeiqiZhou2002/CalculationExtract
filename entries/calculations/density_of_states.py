@@ -25,7 +25,7 @@ class DensityOfStates(BaseCalculation):
         totaldos_procar = None
         if self.vasprunParser is not None:
             totaldos_vasprun = self.vasprunParser.getTotalDos()
-        if 'procar' in self.file_parser:
+        if 'doscar' in self.file_parser:
             totaldos_procar = self.file_parser['doscar'].getTotalDos()
         if totaldos_vasprun is not None and totaldos_procar is not None:
             if not self.compare_with_tolerance(totaldos_vasprun, totaldos_procar):
@@ -45,7 +45,7 @@ class DensityOfStates(BaseCalculation):
         partialdos_procar = None
         if self.vasprunParser is not None:
             partialdos_vasprun = self.vasprunParser.getTotalDos()
-        if 'procar' in self.file_parser:
+        if 'doscar' in self.file_parser:
             partialdos_procar = self.file_parser['doscar'].getTotalDos()
         if partialdos_vasprun is not None and partialdos_procar is not None:
             if not self.compare_with_tolerance(partialdos_vasprun, partialdos_procar):

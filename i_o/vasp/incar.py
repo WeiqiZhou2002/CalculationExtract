@@ -32,7 +32,10 @@ class Incar:
                 if '=' in line:
                     key, value = line.split('=', 1)
                     key = key.strip()
-                    value = value.split('#')[0].split('!')[0].strip()
+                    if key.startswith('#'):
+                        key = key[1:].strip()
+                    # value = value.split('#')[0].split('!')[0].strip()
+                    value = value.split()[0].strip()
                     try:
                         value = float(value) if 'E' in value or '.' or 'e' in value else int(value)
                     except ValueError:

@@ -66,6 +66,8 @@ class GeometryOptimization(BaseCalculation):
             return {}
         energies = []
         kpoints = []
+        if "N/A" in Energies:
+            return {}
         for t in Energies.values():
             energies.append(t)
             kpoints.append(Kpoints)  # 存储两份kpoints，用于自旋情况计算能隙标记

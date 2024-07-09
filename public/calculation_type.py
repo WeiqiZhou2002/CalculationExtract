@@ -52,4 +52,4 @@ class CalType(enumerate):
             return CalType.ElasticProperties
         if parameters['MAGMOM'] is not None:
             return CalType.MagneticProperties
-        raise ValueError('无法判断提取类型，无法提取')
+        raise ValueError("无法判断提取类型，无法提取")

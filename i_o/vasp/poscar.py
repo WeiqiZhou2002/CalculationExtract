@@ -32,6 +32,7 @@ class Poscar:
         self.numberOfSites = None
         self.structure = None
         self.sites = None
+        self.vasp5_symbols = False
 
     def setup(self):
         if len(self.lines) < 7:
@@ -47,8 +48,16 @@ class Poscar:
 
 
     def getComposition(self):
-        elements = self.lines[5].split()
-        counts = list(map(int, self.lines[6].split()))
+
+        try:
+            counts = list(map(int, self.lines[5].split()))
+            elements = self.lines[5].split()
+        except ValueError:
+            self.vasp5_symbols = True
+            elements = self.lines[5].split()
+            counts = list(map(int, self.lines[6].split()))
+        if not self.vasp5_symbols:
+            elements = self.lines[0].split()
         composition = []
         for element, count in zip(elements, counts):
             composition.append(Composition(atomic_symbol=element,
@@ -77,15 +86,21 @@ class Poscar:
         return float(abs(vol))
 
     def getNumberOfSites(self):
-        counts = list(map(int, self.lines[6].split()))
+        if self.vasp5_symbols:
+            counts = list(map(int, self.lines[6].split()))
+        else:
+            counts = list(map(int, self.lines[5].split()))
         number_of_sites_from_counts = sum(counts)
         return number_of_sites_from_counts
 
     def getSites(self):
-        coords_start_line = 8
+        if self.vasp5_symbols:
+            coords_start_line = 8
+        else:
+            coords_start_line = 7
         sites = []
         atom_index = 0
-        if self.lines[8].strip().lower() in ["direct", "cartesian"]:
+        if any(target in self.lines[coords_start_line].strip().lower() for target in ["direct", "cartesian"]):
             coords_start_line += 1
         for comp in self.composition:
             atom = Atom(comp.atomic_symbol)
