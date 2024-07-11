@@ -117,7 +117,7 @@ class Vasprun:
                         flag = True
                         if 'type' in child2.attrib.keys():
                             if child2.attrib['type'] == 'int':
-                                parameters_dict[para] = int(child2.text.strip())
+                                parameters_dict[para] = int(child2.text.split()[0].strip())
                             elif child2.attrib['type'] == 'string':
                                 parameters_dict[para] = child2.text.strip(' ')
                             elif child2.attrib['type'] == 'logical':
@@ -138,7 +138,7 @@ class Vasprun:
                 enmax = []
                 composition = self.composition
                 for doc in composition:
-                    symbol = doc['AtomicSymbol']
+                    symbol = doc.atomic_symbol
                     em = PTable().enmax[symbol]
                     enmax.append(em)
                 parameters_dict['ENCUT'] = max(enmax)
@@ -255,7 +255,14 @@ class Vasprun:
             parameters_dict = self.findPara(dielectric_calculation)
         else:
             parameters_dict = self.findPara(timepredict)
+        # 赝势信息
+        child = self.root.find("./atominfo/array[@name='atomtypes']/set")
+        for child2 in child:
+            pseudopotential.append(child2[4].text.strip(' '))
+        parameters_dict['PseudoPotential'] = pseudopotential
         child = self.root.find("./kpoints/generation")
+        if child is None:
+            return parameters_dict
         # Kpoint信息： band 提取与其他不同，分情况
         if calType == CalType.BandStructure:
             if child.attrib['param'] == 'listgenerated':
@@ -283,11 +290,7 @@ class Vasprun:
                 count += 1
             kpoints['totalnums'] = count
             parameters_dict['Kpoints'] = kpoints
-        # 赝势信息
-        child = self.root.find("./atominfo/array[@name='atomtypes']/set")
-        for child2 in child:
-            pseudopotential.append(child2[4].text.strip(' '))
-        parameters_dict['PseudoPotential'] = pseudopotential
+
         return parameters_dict
 
     def getVolume(self, isinit: bool = False):

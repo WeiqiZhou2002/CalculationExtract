@@ -36,5 +36,5 @@ def parseVarray(elem):
     if elem.get("type", None) == "logical":
         m = [[i == "T" for i in v.text.split()] for v in elem]
     else:
-        m = [[float(i) for i in v.text.split()] for v in elem]
+        m = [[float(i) if '*' not in i else None for i in v.text.split()] for v in elem]
     return m

@@ -57,7 +57,8 @@ class Poscar:
             elements = self.lines[5].split()
             counts = list(map(int, self.lines[6].split()))
         if not self.vasp5_symbols:
-            elements = self.lines[0].split()
+            elements = ['H','H','He']
+            counts = [1,1,1]
         composition = []
         for element, count in zip(elements, counts):
             composition.append(Composition(atomic_symbol=element,

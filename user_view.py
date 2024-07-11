@@ -163,7 +163,7 @@ def vasp_extract(root_path: str, log):
         #     error_message = str(e)
         #    if ("INCAR or vasprun.xml file is required to determine the calculation type" in error_message or
         #         "不可同时无vasprun或poscar和incar" in error_message or
-        #         "无法判断提取类型，无法提取" in error_message):
+        #         "无法判断提取类型，无法提取" in error_message or "File content error, not parse!" in error_message):
         #         continue
         #     else:
         #         print(file, ' ', e, file=outFile)
@@ -188,7 +188,8 @@ def vasp_extract(root_path: str, log):
                 file_parsers['incar'] = Incar(full_path)
             elif file_name.lower() == 'vasprun.xml':
                 file_parsers['vasprun'] = Vasprun(full_path)
-        # 从名字或Incar 和 Vasprun对象中获取计算类型，优先名字
+                file_parsers['vasprun'].setup()
+                # 从名字或Incar 和 Vasprun对象中获取计算类型，优先名字
         parm = {}
         if 'vasprun' in file_parsers and 'incar' in file_parsers:
             parm = file_parsers['vasprun'].parameters

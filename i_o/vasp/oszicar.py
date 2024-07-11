@@ -69,9 +69,16 @@ class Oszicar:
                     electronicSteps.append(doc)
                     energys = []
                     totalenergydiffs = []
-                energy = float(parts[2])
+                try:
+                    energy = float(parts[2])
+                except ValueError as e:
+                    energy = "N/A"
                 energys.append(energy)
-                totalenergydiffs.append(float(parts[3]))
+                try:
+                    total = float(parts[3])
+                except ValueError as e:
+                    total = "N/A"
+                totalenergydiffs.append(total)
                 first = False
 
         if not totalenergydiffs:
@@ -100,8 +107,14 @@ class Oszicar:
         for line in self.lines:
             if re.match(r'^\s*\d+\s+F', line):
                 parts = re.split(r'\s+|=', line.strip())
-                total_energy = float(parts[3])  # Extracting value after 'F='
-                energy_diff = float(parts[10])  # Extracting value after 'dE='
+                try:
+                    total_energy = float(parts[3])  # Extracting value after 'F='
+                except ValueError as e:
+                    total_energy = "N/A"
+                try:
+                    energy_diff = float(parts[10])  # Extracting value after 'dE='
+                except ValueError as e:
+                    energy_diff = "N/A"
                 energies.append(total_energy)
                 totalenergydiffs.append(energy_diff)
         ionSteps['TotalEnergy'] = energies
