@@ -182,6 +182,36 @@ def vasp_extract(root_path: str, log):
         #     continue
         file_parsers = {}
         # 遍历目录中所有文件
+        total_size = 0
+        for file_name in os.listdir(file):
+            full_path = os.path.join(file, file_name)
+            if file_name.upper() == 'INCAR':
+                total_size+=get_file_size(full_path)
+            elif file_name.lower() == 'vasprun.xml':
+                total_size += get_file_size(full_path)
+            elif file_name.upper() == 'POSCAR':
+                total_size += get_file_size(full_path)
+            elif file_name.upper() == 'OUTCAR':
+                total_size += get_file_size(full_path)
+            elif file_name.upper() == 'LOCPOT':
+                total_size += get_file_size(full_path)
+            elif file_name.upper() == 'KPOINTS':
+                total_size += get_file_size(full_path)
+            elif file_name.upper() == 'OSZICAR':
+                total_size += get_file_size(full_path)
+            elif file_name.upper() == 'XDATCAR':
+                total_size += get_file_size(full_path)
+            elif file_name.upper() == 'DOSCAR':
+                total_size += get_file_size(full_path)
+            elif file_name.upper() == 'PROCAR':
+                total_size += get_file_size(full_path)
+            elif file_name.upper() == 'ELFCAR':
+                total_size += get_file_size(full_path)
+            elif file_name.upper() == 'CHGCAR':
+                total_size += get_file_size(full_path)
+            elif file_name.upper() == 'EIGENVAL':
+                total_size += get_file_size(full_path)
+        print(total_size)
         for file_name in os.listdir(file):
             full_path = os.path.join(file, file_name)
             if file_name.upper() == 'INCAR':
@@ -282,6 +312,10 @@ def get_deep_size(obj, seen=None):
         size += sum([get_deep_size(i, seen) for i in obj])
     return size
 
+def get_file_size(file_path):
+    # 获取文件大小（字节）
+    file_size = os.path.getsize(file_path)
+    return file_size
 
 
 # def getCalType(rootPath, collections, parm):

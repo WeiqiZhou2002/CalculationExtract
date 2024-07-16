@@ -56,7 +56,7 @@ class Oszicar:
         for line in self.lines:
             if re.match(r'^[A-Za-z]{3}', line):
                 parts = re.split(r'\s+', line.strip())
-                if int(parts[1]) == 1 and not first:
+                if '*' not in parts[1] and int(parts[1]) == 1 and not first:
                     if EDIFF >= totalenergydiffs[-1]:
                         eleconvergency = True
                     else:

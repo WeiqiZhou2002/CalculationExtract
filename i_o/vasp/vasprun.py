@@ -313,6 +313,8 @@ class Vasprun:
             forces = [None for _ in range(len(specs))]
         else:
             force_child = self.root.find("./calculation[last()]/varray[@name='forces']")
+            if force_child is None:
+                force_child = self.root.find("./varray[@name='forces']")
             for force in force_child:
                 forces.append([float(x) for x in force.text.split()])
 

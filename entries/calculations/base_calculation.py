@@ -104,6 +104,8 @@ class BaseCalculation(ABC):
             return doc
         fermienergy = 0
         child = self.vasprunParser.root.find("./calculation[last()]/energy/i[@name='e_fr_energy']")
+        if child is None:
+            child = self.vasprunParser.root.find("./energy/i[@name='e_fr_energy']")
         totalenergy = float(child.text)
         numberofatoms = int(self.vasprunParser.root.find("./atominfo/atoms").text)
         if self.vasprunParser is not None:
