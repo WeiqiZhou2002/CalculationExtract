@@ -52,6 +52,7 @@ class Oszicar:
         electronicSteps = []
         energys = []
         totalenergydiffs = []
+
         first = True
         for line in self.lines:
             if re.match(r'^[A-Za-z]{3}', line):
@@ -72,12 +73,12 @@ class Oszicar:
                 try:
                     energy = float(parts[2])
                 except ValueError as e:
-                    energy = "N/A"
+                    energy = None
                 energys.append(energy)
                 try:
                     total = float(parts[3])
                 except ValueError as e:
-                    total = "N/A"
+                    total = None
                 totalenergydiffs.append(total)
                 first = False
 

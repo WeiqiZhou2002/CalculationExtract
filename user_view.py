@@ -212,6 +212,9 @@ def vasp_extract(root_path: str, log):
             elif file_name.upper() == 'EIGENVAL':
                 total_size += get_file_size(full_path)
         print(total_size)
+        if total_size > 20000 * 1024 * 1024:
+
+            raise ValueError("File too big")
         for file_name in os.listdir(file):
             full_path = os.path.join(file, file_name)
             if file_name.upper() == 'INCAR':
